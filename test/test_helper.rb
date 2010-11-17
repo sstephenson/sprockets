@@ -15,8 +15,8 @@ class Test::Unit::TestCase
       IO.read(location_for_fixture(fixture))
     end
   
-    def environment_for_fixtures
-      Sprockets::Environment.new(FIXTURES_PATH, source_directories_in_fixtures_path)
+    def environment_for_fixtures(constants={})
+      Sprockets::Environment.new(FIXTURES_PATH, source_directories_in_fixtures_path, constants)
     end
   
     def source_directories_in_fixtures_path

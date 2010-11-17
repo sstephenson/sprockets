@@ -56,7 +56,13 @@ class EnvironmentTest < Test::Unit::TestCase
     assert_kind_of Hash, constants
     assert_equal %w(HELLO ONE TWO VERSION), constants.keys.sort
   end
-  
+
+  def test_passing_in_constants_to_override_using_constants_in_the_load_path
+    environment = environment_for_fixtures({"VERSION" => 99})
+    assert_equal 99, environment.constants["VERSION"]
+    assert_equal "one", environment.constants["ONE"]
+  end
+
   protected
     def assert_load_path_equals(load_path_absolute_locations, environment)
       assert load_path_absolute_locations.zip(environment.load_path).map { |location, pathname| File.expand_path(location) == pathname.absolute_location }.all?

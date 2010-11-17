@@ -81,7 +81,12 @@ class SecretaryTest < Test::Unit::TestCase
     secretary.add_source_file("src/script_with_comments.js")
     assert_equal content_of_fixture("src/script_with_comments.js"), secretary.concatenation.to_s
   end
-  
+
+  def test_secretary_passing_constants_to_the_environment
+    secretary = Sprockets::Secretary.new(:root => FIXTURES_PATH, :constants => {"VERSION" => 99})
+    assert_equal secretary.environment.constants["VERSION"], 99
+  end
+
   protected
     def paths_relative_to(root, *paths)
       paths.map { |path| File.join(root, path) }
