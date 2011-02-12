@@ -6,6 +6,7 @@ module Sprockets
 
     def initialize(environment = Environment.new)
       self.environment = environment
+      @extra_headers = {}
     end
 
     def call(env)
@@ -26,6 +27,10 @@ module Sprockets
       else
         ok_response(asset, env)
       end
+    end
+
+    def extra_headers(headers)
+      @extra_headers = headers
     end
 
     private
@@ -78,7 +83,7 @@ module Sprockets
           if env["QUERY_STRING"] == asset.digest
             headers["Cache-Control"] << ", max-age=31557600"
           end
-        end
+        end.merge(@extra_headers)
       end
 
       def etag(asset)
