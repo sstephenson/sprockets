@@ -30,6 +30,13 @@ class TestServer < Sprockets::TestCase
     @app ||= default_app
   end
 
+  test "custom headers on server" do
+    javascripts_app.extra_headers('Vary' => 'Accept-Encoding', 'Kurt' => 'Wins')
+
+    get "/javascripts/foo.js"
+    assert_equal "Wins", last_response.headers['Kurt']
+    assert_equal "Accept-Encoding", last_response.headers['Vary']
+  end
   test "serve single source file" do
     get "/javascripts/foo.js"
     assert_equal "var foo;\n", last_response.body
