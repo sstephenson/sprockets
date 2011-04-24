@@ -1,3 +1,7 @@
+#### Sprockets::Context
+#
+# The context class keeps track of an environment, basepath, and the logical path for a pathname
+# TODO Fill in with better explanation
 module Sprockets
   class Context
     attr_reader :environment, :asset, :pathname

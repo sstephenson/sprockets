@@ -1,3 +1,4 @@
+# Define some basic Sprockets error classes
 module Sprockets
   class Error       < StandardError; end
   class ArgumentError       < Error; end

@@ -1,3 +1,4 @@
+# autoload the various classes used in Sprockets
 module Sprockets
   autoload :ArgumentError,       "sprockets/errors"
   autoload :ConcatenatedAsset,   "sprockets/concatenated_asset"
