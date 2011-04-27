@@ -1,30 +1,30 @@
-require "digest/md5"
-require "sprockets/pathname"
-require "time"
+require 'sprockets/engine_pathname'
+require 'sprockets/utils'
+require 'digest/md5'
+require 'time'
 
 module Sprockets
   class StaticAsset
-    attr_reader :pathname, :mtime, :length, :digest
+    attr_reader :pathname, :content_type, :mtime, :length, :digest
 
-    def initialize(pathname)
+    def initialize(environment, pathname)
       @pathname = Pathname.new(pathname)
+
+      engine_pathname = EnginePathname.new(pathname, environment.engines)
+      @content_type   = engine_pathname.content_type
 
       @mtime  = @pathname.mtime
       @length = @pathname.size
 
-      if digest = @pathname.fingerprint
+      if digest = Utils.path_fingerprint(@pathname)
         @digest = digest
       else
         @digest = Digest::MD5.hexdigest(pathname.read)
       end
     end
 
-    def content_type
-      pathname.content_type
-    end
-
     def stale?
-      if pathname.fingerprint
+      if Utils.path_fingerprint(pathname)
         false
       else
         mtime < pathname.mtime

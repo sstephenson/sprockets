@@ -1,23 +1,23 @@
+require 'sprockets/engine_pathname'
+require 'sprockets/environment_index'
+require 'sprockets/server'
+require 'sprockets/utils'
 require 'fileutils'
 require 'hike'
 require 'logger'
-require 'sprockets/environment_index'
-require 'sprockets/pathname'
-require 'sprockets/server'
-require 'sprockets/template_mappings'
+require 'pathname'
 
 module Sprockets
   class Environment
-    extend TemplateMappings
     include Server
 
     attr_accessor :logger, :context
 
     def initialize(root = ".")
       @trail = Hike::Trail.new(root)
-      extensions = ConcatenatedAsset::DEFAULT_ENGINE_EXTENSIONS +
-        ConcatenatedAsset::CONCATENATABLE_EXTENSIONS
-      engine_extensions.replace(extensions)
+      @trail.extensions.replace Engines::CONCATENATABLE_EXTENSIONS
+
+      @engines = Engines.new(@trail)
 
       @logger = Logger.new($stderr)
       @logger.level = Logger::FATAL
@@ -69,7 +69,9 @@ module Sprockets
       ArrayProxy.new(@trail.paths) { expire_cache }
     end
 
-    def engine_extensions
+    attr_reader :engines
+
+    def extensions
       ArrayProxy.new(@trail.extensions) { expire_cache }
     end
 
@@ -103,7 +105,7 @@ module Sprockets
 
       def find_fresh_asset_from_cache(logical_path)
         if asset = @cache[logical_path.to_s]
-          if logical_path.fingerprint
+          if Utils.path_fingerprint(logical_path)
             asset
           elsif asset.stale?
             logger.warn "[Sprockets] #{logical_path} #{asset.digest} stale"

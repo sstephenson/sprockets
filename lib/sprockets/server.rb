@@ -1,5 +1,5 @@
+require 'sprockets/utils'
 require 'rack/request'
-require 'sprockets/pathname'
 require 'time'
 
 module Sprockets
@@ -21,12 +21,10 @@ module Sprockets
     end
 
     def path(logical_path, fingerprint = true, prefix = nil)
-      logical_path = Pathname.new(logical_path)
-
       if fingerprint && asset = find_asset(logical_path)
-        url = logical_path.with_fingerprint(asset.digest).to_s
+        url = Utils.path_with_fingerprint(logical_path, asset.digest)
       else
-        url = logical_path.to_s
+        url = logical_path
       end
 
       url = File.join(prefix, url) if prefix
@@ -90,7 +88,7 @@ module Sprockets
           headers["Last-Modified"]  = asset.mtime.httpdate
           headers["ETag"]           = etag(asset)
 
-          if Pathname.new(env["PATH_INFO"]).fingerprint
+          if Utils.path_fingerprint(env["PATH_INFO"])
             headers["Cache-Control"] << ", max-age=31536000"
           else
             headers["Cache-Control"] << ", must-revalidate"

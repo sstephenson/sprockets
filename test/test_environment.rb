@@ -26,9 +26,19 @@ module EnvironmentTests
     assert_equal [fixture_path("default")], @env.paths.to_a
   end
 
+  test "extensions" do
+    ["coffee", "erb", "less", "sass", "scss", "str", "css", "js"].each do |ext|
+      assert @env.extensions.to_a.include?(".#{ext}")
+    end
+  end
+
   test "engine extensions" do
-    assert_equal [".coffee", ".erb", ".less", ".sass", ".scss", ".str", ".css", ".js"],
-      @env.engine_extensions.to_a
+    ["coffee", "erb", "less", "sass", "scss", "str"].each do |ext|
+      assert @env.engines.extensions.include?(".#{ext}")
+    end
+    ["css", "js"].each do |ext|
+      assert !@env.engines.extensions.include?(".#{ext}")
+    end
   end
 
   test "resolve in environment" do
@@ -244,7 +254,7 @@ class TestEnvironment < Sprockets::TestCase
 
   test "changing extensions expires old assets" do
     assert @env["gallery.css"]
-    @env.engine_extensions.clear
+    @env.extensions.clear
     assert_nil @env["gallery.css"]
   end
 
@@ -292,19 +302,6 @@ class TestEnvironment < Sprockets::TestCase
     end
   end
 
-  test "extend context" do
-    @env.context.class_eval do
-      def datauri(path)
-        require 'base64'
-        Base64.encode64(File.open(path, "rb") { |f| f.read })
-      end
-    end
-
-    assert_equal ".pow {\n  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAEsCAMAAADNS4U5AAAAGXRFWHRTb2Z0\n",
-      @env["helpers.css"].to_s.lines.to_a[0..1].join
-    assert_equal 58240, @env["helpers.css"].length
-  end
-
   test "seperate contexts classes for each instance" do
     e1 = new_environment
     e2 = new_environment
@@ -318,6 +315,39 @@ class TestEnvironment < Sprockets::TestCase
 
     assert_nothing_raised(NameError) { e1.context.instance_method(:foo) }
     assert_raises(NameError) { e2.context.instance_method(:foo) }
+  end
+
+  test "registering engine adds to the environments extensions" do
+    assert !@env.engines[".foo"]
+    assert !@env.extensions.include?(".foo")
+
+    @env.engines.register ".foo", Tilt::StringTemplate
+
+    assert @env.engines[".foo"]
+    assert @env.extensions.include?(".foo")
+  end
+
+  test "seperate engines for each instance" do
+    e1 = new_environment
+    e2 = new_environment
+
+    assert_nil e1.engines[".foo"]
+    assert_nil e2.engines[".foo"]
+
+    e1.engines.register ".foo", Tilt::StringTemplate
+
+    assert e1.engines[".foo"]
+    assert_nil e2.engines[".foo"]
+  end
+
+  test "disabling default directive preprocessor" do
+    @env.engines.pre_processors.delete(Sprockets::DirectiveProcessor)
+    assert_equal "// =require \"notfound\"\n", @env["missing_require.js"].to_s
+  end
+
+  test "adding ERB postprocessor to all assets" do
+    @env.engines.post_processors.push(Tilt::ERBTemplate)
+    assert_equal "var Interpolation = 2;\n", @env["interpolation.js"].to_s
   end
 end
 
@@ -376,5 +406,18 @@ class TestEnvironmentIndex < Sprockets::TestCase
     assert_equal WhitespaceCompressor, index.js_compressor
     env.js_compressor = nil
     assert_equal WhitespaceCompressor, index.js_compressor
+  end
+
+  test "change in environment engines does not affect index" do
+    env = Sprockets::Environment.new
+    index = env.index
+
+    assert_nil env.engines[".foo"]
+    assert_nil index.engines[".foo"]
+
+    env.engines.register ".foo", Tilt::StringTemplate
+
+    assert env.engines[".foo"]
+    assert_nil index.engines[".foo"]
   end
 end
