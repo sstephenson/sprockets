@@ -170,7 +170,7 @@ module Sprockets
 
           context.sprockets_depend(root)
 
-          each_pathname_in_tree(path) do |pathname|
+          context.each_pathname_in_tree(path) do |pathname|
             if pathname.file?
               context.sprockets_require(pathname)
             else
@@ -187,25 +187,13 @@ module Sprockets
       end
 
     private
-      def each_pathname_in_tree(path)
-        Dir["#{base_path.join(path)}/**/*"].sort.each do |filename|
-          pathname = Pathname.new(filename)
-
-          if pathname.directory?
-            yield pathname
-          elsif pathname.file? &&
-              EnginePathname.new(pathname, @environment.engines).content_type == EnginePathname.new(self.pathname, @environment.engines).content_type
-            yield pathname
-          end
-        end
-      end
-
       def relative?(path)
         path =~ /^\.($|\.?\/)/
       end
 
       def base_path
-        self.pathname.dirname
+        context.base_path
       end
+
   end
 end

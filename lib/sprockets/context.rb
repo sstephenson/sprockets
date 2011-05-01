@@ -70,6 +70,24 @@ module Sprockets
       @_sprockets_concatenation.process(_expand_path(path))
     end
 
+    def each_pathname_in_tree(relative_path = ".", glob = "**/*")
+      Dir["#{base_path.join(relative_path)}/#{glob}"].sort.each do |filename|
+        pathname = Pathname.new(filename)
+
+        if pathname.directory?
+          yield pathname
+        elsif pathname.file? &&
+            EnginePathname.new(pathname, sprockets_environment.engines).content_type == EnginePathname.new(self.pathname, sprockets_environment.engines).content_type
+          yield pathname
+        end
+      end
+    end
+
+    def base_path
+      self.pathname.dirname
+    end
+
+
     private
       def _expand_path(path)
         pathname = Pathname.new(path)
