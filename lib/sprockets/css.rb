@@ -4,6 +4,11 @@ module Sprockets
   class SassTemplate < Tilt::SassTemplate
     self.default_mime_type = 'text/css'
 
+    def initialize(*args)
+      super
+      @context = Context
+    end
+
     def syntax
       :sass
     end
