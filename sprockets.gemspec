@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
   s.add_dependency "hike", "~> 0.7"
   s.add_dependency "rack", "~> 1.0"
   s.add_dependency "tilt", "~> 1.0"
+  s.add_development_dependency "sass", "~> 3.1"
 
   s.authors = ["Sam Stephenson", "Joshua Peek"]
   s.email = "sstephenson@gmail.com"
