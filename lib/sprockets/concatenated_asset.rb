@@ -1,23 +1,48 @@
 require 'sprockets/asset_pathname'
-require 'sprockets/concatenation'
+require 'sprockets/errors'
+require 'digest/md5'
+require 'set'
+require 'time'
 
 module Sprockets
   class ConcatenatedAsset
-    attr_reader :content_type
-    attr_reader :mtime, :length, :digest
+    attr_reader :logical_path, :pathname
+    attr_reader :content_type, :mtime, :length, :digest
+    attr_reader :_dependency_paths
+    attr_reader :body
 
-    def initialize(environment, pathname)
+    def initialize(environment, logical_path, pathname, _requires)
+      environment = environment
+      context     = environment.context_class.new(environment, logical_path.to_s, pathname)
+
+      @logical_path = logical_path.to_s
+      @pathname     = pathname
       @content_type = AssetPathname.new(pathname, environment).content_type
 
-      concatenation = Concatenation.new(environment, pathname)
-      concatenation.require(pathname)
-      concatenation.post_process!
+      @body = context.evaluate(pathname)
 
-      @source_paths = concatenation.paths
-      @mtime        = concatenation.mtime
-      @length       = concatenation.length
-      @digest       = concatenation.digest
-      @source       = concatenation.to_s
+      if _requires.include?(pathname.to_s)
+        raise CircularDependencyError, "#{pathname} has already been required"
+      end
+      _requires << pathname.to_s
+
+      @assets = []
+
+      compute_dependencies(environment, context, _requires)
+      compute_dependency_paths(context)
+      compute_source(environment, context)
+    end
+
+    def dependencies?
+      dependencies.any?
+    end
+
+    def dependencies
+      @assets - [self]
+    end
+
+    def to_a
+      @assets
     end
 
     def each
@@ -25,7 +50,7 @@ module Sprockets
     end
 
     def stale?
-      @source_paths.any? { |p| mtime < File.mtime(p) }
+      _dependency_paths.any? { |p| mtime < File.mtime(p) }
     rescue Errno::ENOENT
       true
     end
@@ -36,11 +61,64 @@ module Sprockets
 
     def eql?(other)
       other.class == self.class &&
-        other.content_type == self.content_type &&
-        other.source_paths == self.source_paths &&
+        other.pathname == self.pathname &&
         other.mtime == self.mtime &&
         other.digest == self.digest
     end
     alias_method :==, :eql?
+
+    private
+      def compute_dependencies(environment, context, _requires)
+        context._required_paths.each do |required_path|
+          if required_path == pathname.to_s
+            add_dependency(self)
+          else
+            environment[required_path, _requires].to_a.each do |asset|
+              add_dependency(asset)
+            end
+          end
+        end
+        add_dependency(self)
+      end
+
+      def add_dependency(asset)
+        unless to_a.any? { |dep| dep.pathname == asset.pathname }
+          @assets << asset
+        end
+      end
+
+      def compute_dependency_paths(context)
+        @_dependency_paths = Set.new
+        @mtime = Time.at(0)
+
+        depend_on(pathname)
+
+        context._dependency_paths.each do |path|
+          depend_on(path)
+        end
+
+        to_a.each do |dependency|
+          dependency._dependency_paths.each do |path|
+            depend_on(path)
+          end
+        end
+      end
+
+      def depend_on(path)
+        if (mtime = File.mtime(path)) > @mtime
+          @mtime = mtime
+        end
+        @_dependency_paths << path
+      end
+
+      def compute_source(environment, context)
+        source = ""
+        to_a.each { |dependency| source << dependency.body }
+
+        @source = context.evaluate(pathname, :data => source,
+                    :engines => environment.filters(content_type))
+        @length = Rack::Utils.bytesize(@source)
+        @digest = Digest::MD5.hexdigest(@source)
+      end
   end
 end

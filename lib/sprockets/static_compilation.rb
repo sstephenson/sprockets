@@ -58,14 +58,14 @@ module Sprockets
 
           entries.each do |filename|
             if filename.to_s =~ pattern
-              asset = StaticAsset.new(self, pathname.dirname.join(filename), $1)
+              asset = StaticAsset.new(self, logical_path, pathname.dirname.join(filename), $1)
               return asset
             end
           end
         end
 
         if entries.include?(pathname.basename) && pathname.file?
-          asset = StaticAsset.new(self, pathname)
+          asset = StaticAsset.new(self, logical_path, pathname)
           return asset
         end
 
@@ -101,13 +101,6 @@ module Sprockets
           end
         end
         files
-      end
-
-      def path_without_engine_extensions(pathname)
-        asset_pathname = AssetPathname.new(pathname, self)
-        asset_pathname.engine_extensions.inject(pathname) do |p, ext|
-          p.sub(ext, '')
-        end
       end
 
       def entries(pathname)

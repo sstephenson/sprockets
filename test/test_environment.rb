@@ -84,8 +84,8 @@ module EnvironmentTests
     assert_equal "var Gallery = {};\n", @env["gallery.js"].to_s
   end
 
-  test "find concatenated asset with leading slash in environment" do
-    assert_equal "var Gallery = {};\n", @env["/gallery.js"].to_s
+  test "find concatenated asset with absolute path environment" do
+    assert_equal "var Gallery = {};\n", @env[fixture_path("default/gallery.js")].to_s
   end
 
   test "find static asset in environment" do
@@ -93,7 +93,7 @@ module EnvironmentTests
   end
 
   test "find static asset with leading slash in environment" do
-    assert_equal "Hello world\n", @env["/hello.txt"].to_s
+    assert_equal "Hello world\n", @env[fixture_path("default/hello.txt")].to_s
   end
 
   test "find compiled asset in static root" do
@@ -103,7 +103,7 @@ module EnvironmentTests
 
   test "find compiled asset with leading slash in static root" do
     assert_equal "(function() {\n  application.boot();\n})();\n",
-      @env["/compiled.js"].to_s
+      @env[fixture_path("public/compiled-digest-0aa2105d29558f3eb790d411d7d8fb66.js")].to_s
   end
 
   test "find compiled asset in static root is StaticAsset" do
@@ -153,6 +153,15 @@ module EnvironmentTests
     assert_raises Sprockets::FileNotFound do
       @env["missing_require.js"]
     end
+  end
+
+  test "asset logical path for absolute path" do
+    assert_equal "gallery.js",
+      @env[fixture_path("default/gallery.js")].logical_path
+    assert_equal "application.js",
+      @env[fixture_path("default/application.js.coffee")].logical_path
+    assert_equal "mobile/a.js",
+      @env[fixture_path("default/mobile/a.js")].logical_path
   end
 
   test "lookup asset digest" do

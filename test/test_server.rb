@@ -35,6 +35,12 @@ class TestServer < Sprockets::TestCase
     assert_equal "var foo;\n", last_response.body
   end
 
+  test "serve single source file body" do
+    get "/javascripts/foo.js?body=1"
+    assert_equal 200, last_response.status
+    assert_equal "var foo;\n", last_response.body
+  end
+
   test "serve single source file from indexed environment" do
     get "/cached/javascripts/foo.js"
     assert_equal "var foo;\n", last_response.body
@@ -43,6 +49,13 @@ class TestServer < Sprockets::TestCase
   test "serve source with dependencies" do
     get "/javascripts/application.js"
     assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\n",
+      last_response.body
+  end
+
+  test "serve source file body that has dependencies" do
+    get "/javascripts/application.js?body=true"
+    assert_equal 206, last_response.status
+    assert_equal "\n(function() {\n  application.boot();\n})();\n",
       last_response.body
   end
 

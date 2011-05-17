@@ -55,15 +55,20 @@ module Sprockets
       end
     end
 
-    def find_asset(logical_path)
-      logical_path     = logical_path.to_s.sub(/^\//, '')
-      logical_pathname = Pathname.new(logical_path)
+    def find_asset(path, _requires = [])
+      pathname = Pathname.new(path)
 
-      if @assets.key?(logical_path)
-        @assets[logical_path]
+      if pathname.absolute?
+        build_asset(detect_logical_path(path).to_s, pathname, _requires)
       else
-        @assets[logical_path] = find_asset_in_static_root(logical_pathname) ||
-          find_asset_in_path(logical_pathname)
+        logical_path = path.to_s.sub(/^\//, '')
+
+        if @assets.key?(logical_path)
+          @assets[logical_path]
+        else
+          @assets[logical_path] = find_asset_in_static_root(pathname) ||
+            find_asset_in_path(pathname, _requires)
+        end
       end
     end
     alias_method :[], :find_asset
@@ -73,7 +78,7 @@ module Sprockets
         raise TypeError, "can't modify immutable index"
       end
 
-      def find_asset_in_path(logical_path)
+      def find_asset_in_path(logical_path, _requires = [])
         if fingerprint = path_fingerprint(logical_path)
           pathname = resolve(logical_path.to_s.sub("-#{fingerprint}", ''))
         else
@@ -82,16 +87,7 @@ module Sprockets
       rescue FileNotFound
         nil
       else
-        asset_pathname = AssetPathname.new(pathname, self)
-        extension      = asset_pathname.format_extension ||
-                         asset_pathname.engine_format_extension
-
-        if formats(extension).any?
-          logger.info "[Sprockets] #{logical_path} building"
-          asset = ConcatenatedAsset.new(self, pathname)
-        else
-          asset = StaticAsset.new(self, pathname)
-        end
+        asset = build_asset(logical_path, pathname, _requires)
 
         if fingerprint && fingerprint != asset.digest
           logger.error "[Sprockets] #{logical_path} #{fingerprint} nonexistent"
@@ -99,6 +95,26 @@ module Sprockets
         end
 
         asset
+      end
+
+      def build_asset(logical_path, pathname, _requires)
+        if asset = @assets[logical_path.to_s]
+          return asset
+        end
+
+        pathname       = Pathname.new(pathname)
+        asset_pathname = AssetPathname.new(pathname, self)
+        extension      = asset_pathname.format_extension ||
+                         asset_pathname.engine_format_extension
+
+        if formats(extension).any?
+          logger.info "[Sprockets] #{logical_path} building"
+          asset = ConcatenatedAsset.new(self, logical_path, pathname, _requires)
+        else
+          asset = StaticAsset.new(self, logical_path, pathname)
+        end
+
+        @assets[logical_path.to_s] = asset
       end
 
     private
@@ -111,6 +127,21 @@ module Sprockets
         else
           basename = "#{asset_pathname.basename_without_extensions}/index#{asset_pathname.extensions.join}"
           pathname.dirname.to_s == '.' ? basename : pathname.dirname.join(basename).to_s
+        end
+      end
+
+      def detect_logical_path(filename)
+        if root_path = paths.detect { |path| filename.to_s[path] }
+          root_pathname = Pathname.new(root_path)
+          logical_path  = Pathname.new(filename).relative_path_from(root_pathname)
+          path_without_engine_extensions(logical_path)
+        end
+      end
+
+      def path_without_engine_extensions(pathname)
+        asset_pathname = AssetPathname.new(pathname, self)
+        asset_pathname.engine_extensions.inject(pathname) do |p, ext|
+          p.sub(ext, '')
         end
       end
   end

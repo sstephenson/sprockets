@@ -5,6 +5,15 @@ module AssetTests
     define_method("test #{name.inspect}", &block)
   end
 
+  test "pathname is a Pathname that exists" do
+    assert_kind_of Pathname, @asset.pathname
+    assert @asset.pathname.exist?
+  end
+
+  test "logical path can find itself" do
+    assert_equal @asset, @env[@asset.logical_path]
+  end
+
   test "content type" do
     assert_equal "application/javascript", @asset.content_type
   end
@@ -34,6 +43,18 @@ module AssetTests
   test "to_s" do
     assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
   end
+
+  test "dependencies are an Array" do
+    assert_kind_of Array, @asset.dependencies
+  end
+
+  test "splat asset" do
+    assert_kind_of Array, @asset.to_a
+  end
+
+  test "body is a String" do
+    assert_kind_of String, @asset.body
+  end
 end
 
 class StaticAssetTest < Sprockets::TestCase
@@ -44,15 +65,31 @@ class StaticAssetTest < Sprockets::TestCase
     @asset = @env['compiled-application.js']
   end
 
+  include AssetTests
+
   test "class" do
     assert_kind_of Sprockets::StaticAsset, @asset
+  end
+
+  test "splat" do
+    assert_equal [@asset], @asset.to_a
+  end
+
+  test "dependencies" do
+    assert_equal [], @asset.dependencies
+  end
+
+  test "dependencies?" do
+    assert !@asset.dependencies?
   end
 
   test "to path" do
     assert_equal fixture_path('public/compiled-application.js'), @asset.to_path
   end
 
-  include AssetTests
+  test "body is entire contents" do
+    assert_equal @asset.to_s, @asset.body
+  end
 end
 
 class ConcatenatedAssetTest < Sprockets::TestCase
@@ -79,8 +116,32 @@ class ConcatenatedAssetTest < Sprockets::TestCase
     end
   end
 
+  test "splatted asset includes itself" do
+    assert_equal [resolve("project.js")], asset("project.js").to_a.map(&:pathname)
+  end
+
+  test "asset includes self as dependency" do
+    assert_equal [], asset("project.js").dependencies.map(&:pathname)
+  end
+
+  test "asset with child dependencies" do
+    assert_equal [resolve("project.js"), resolve("users.js")],
+      asset("application.js").dependencies.map(&:pathname)
+  end
+
+  test "splatted asset with child dependencies" do
+    assert_equal [resolve("project.js"), resolve("users.js"), resolve("application.js")],
+      asset("application.js").to_a.map(&:pathname)
+  end
+
+  test "concatenated asset body is just its own contents" do
+    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
+      asset("application.js").body
+  end
+
   test "concating joins files with blank line" do
-    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", asset("application.js").to_s
+    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
+      asset("application.js").to_s
   end
 
   test "dependencies appear in the source before files that required them" do
@@ -156,7 +217,7 @@ class ConcatenatedAssetTest < Sprockets::TestCase
   end
 
   test "require_self inserts the current file's body at the specified point" do
-    assert_equal "/* b.css */\n\nb { display: none }\n/*\n */\n\n.one {}\n\n\nbody {}\n.project {}\n.two {}\n", asset("require_self.css").to_s
+    assert_equal "/* b.css */\n\nb { display: none }\n/*\n */\n.one {}\n\n\nbody {}\n.two {}\n.project {}\n", asset("require_self.css").to_s
   end
 
   test "multiple require_self directives raises and error" do
@@ -165,10 +226,16 @@ class ConcatenatedAssetTest < Sprockets::TestCase
     end
   end
 
-  test "circular require works for now" do
-    assert_equal "var C;\nvar B;\nvar A;\n", asset("circle/a.js").to_s
-    assert_equal "var A;\nvar C;\nvar B;\n", asset("circle/b.js").to_s
-    assert_equal "var B;\nvar A;\nvar C;\n", asset("circle/c.js").to_s
+  test "circular require raises an error" do
+    assert_raise(Sprockets::CircularDependencyError) do
+      asset("circle/a.js")
+    end
+    assert_raise(Sprockets::CircularDependencyError) do
+      asset("circle/b.js")
+    end
+    assert_raise(Sprockets::CircularDependencyError) do
+      asset("circle/c.js")
+    end
   end
 
   test "__FILE__ is properly set in templates" do

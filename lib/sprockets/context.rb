@@ -1,6 +1,7 @@
 require 'sprockets/asset_pathname'
 require 'sprockets/errors'
 require 'pathname'
+require 'set'
 
 #### Sprockets::Context
 #
@@ -8,15 +9,16 @@ require 'pathname'
 # TODO Fill in with better explanation
 module Sprockets
   class Context
-    attr_reader :concatenation, :pathname
+    attr_reader :environment, :pathname
+    attr_reader :_required_paths, :_dependency_paths
 
-    def initialize(concatenation, pathname)
-      @concatenation = concatenation
-      @pathname      = pathname
-    end
+    def initialize(environment, logical_path, pathname)
+      @environment  = environment
+      @logical_path = logical_path
+      @pathname     = pathname
 
-    def environment
-      concatenation.environment
+      @_required_paths   = []
+      @_dependency_paths = Set.new
     end
 
     def root_path
@@ -24,9 +26,7 @@ module Sprockets
     end
 
     def logical_path
-      if pathname && root_path
-        pathname.to_s[%r{^#{root_path}\/([^.]+)}, 1]
-      end
+      @logical_path[/^([^.]+)/, 0]
     end
 
     def content_type
@@ -63,7 +63,7 @@ module Sprockets
     end
 
     def depend_on(path)
-      concatenation.depend_on(resolve(path))
+      @_dependency_paths << resolve(path).to_s
     end
 
     def evaluate(filename, options = {})
@@ -83,11 +83,20 @@ module Sprockets
     end
 
     def asset_requirable?(path)
-      concatenation.can_require?(resolve(path, :content_type => :self))
+      pathname = resolve(path)
+      content_type = AssetPathname.new(pathname, environment).content_type
+      pathname.file? && (self.content_type.nil? || self.content_type == content_type)
     end
 
     def require_asset(path)
-      concatenation.require(resolve(path, :content_type => :self))
+      pathname = resolve(path, :content_type => :self)
+
+      unless @_required_paths.include?(pathname.to_s)
+        @_dependency_paths << pathname.to_s
+        @_required_paths << pathname.to_s
+      end
+
+      pathname
     end
   end
 end

@@ -86,7 +86,8 @@ module Sprockets
       if asset = find_fresh_asset_from_cache(logical_path)
         asset
       elsif asset = index.find_asset(logical_path)
-        @cache[logical_path.to_s] = asset
+        asset.to_a.each { |a| @cache[a.logical_path.to_s] = a }
+        asset
       end
     end
     alias_method :[], :find_asset
