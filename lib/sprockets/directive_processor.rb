@@ -336,7 +336,7 @@ module Sprockets
 
       # Enable Sprockets 1.x compat mode.
       #
-      # Makes it possible to use the same javascript soruce
+      # Makes it possible to use the same javascript source
       # file in both Sprockets 1 and 2.
       #
       #     //= compat
