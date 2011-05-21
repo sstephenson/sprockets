@@ -13,6 +13,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "execjs"
   s.add_development_dependency "coffee-script"
   s.add_development_dependency "ejs"
+  s.add_development_dependency "rocco"
+  s.add_development_dependency "pygmentize"
 
   s.authors = ["Sam Stephenson", "Joshua Peek"]
   s.email = "sstephenson@gmail.com"
