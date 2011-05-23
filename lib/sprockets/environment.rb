@@ -36,6 +36,7 @@ module Sprockets
 
       register_engine '.str',    Tilt::StringTemplate
       register_engine '.erb',    Tilt::ERBTemplate
+      register_engine '.haml',   Tilt::HamlTemplate
       register_engine '.sass',   Tilt::SassTemplate
       register_engine '.scss',   Tilt::ScssTemplate
       register_engine '.less',   Tilt::LessTemplate
