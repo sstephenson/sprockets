@@ -19,7 +19,7 @@ module Sprockets
 
     def pretty_path
       @pretty_path ||= @pathname.
-        sub(/^#{Regexp.escape(ENV['HOME'])}/, '~').
+        sub(/^#{Regexp.escape(ENV['HOME'] || '')}/, '~').
         sub(/^#{Regexp.escape(environment.root)}\//, '')
     end
 
