@@ -13,7 +13,12 @@ module Sprockets
 
     attr_accessor :logger, :context_class
 
-    def initialize(root = ".")
+    # Data that will be stored in the environment
+    # So that it can be accessed by templates and
+    # template handlers.
+    attr_accessor :opaque_data
+
+    def initialize(root = ".", opaque_data = {})
       @trail = Hike::Trail.new(root)
 
       @logger = Logger.new($stderr)
@@ -29,6 +34,8 @@ module Sprockets
       @mime_types = {}
       @processors = Hash.new { |h, k| h[k] = [] }
       @bundle_processors = Hash.new { |h, k| h[k] = [] }
+
+      @opaque_data = opaque_data
 
       register_mime_type 'text/css', '.css'
       register_mime_type 'application/javascript', '.js'
