@@ -8,7 +8,7 @@ module Sprockets
   class EnvironmentIndex
     include Server, Processing, StaticCompilation
 
-    attr_reader :logger, :context_class
+    attr_reader :logger, :context_class, :opaque_data
 
     def initialize(environment, trail, static_root)
       @logger         = environment.logger
@@ -24,6 +24,7 @@ module Sprockets
       @engines    = environment.engines
       @processors = environment.processors
       @bundle_processors = environment.bundle_processors
+      @opaque_data = environment.opaque_data
     end
 
     def root
