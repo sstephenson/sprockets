@@ -1,3 +1,5 @@
+require 'tilt'
+
 module Sprockets
   class EjsTemplate < Tilt::Template
     def self.default_mime_type

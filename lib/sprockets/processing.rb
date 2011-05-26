@@ -1,36 +1,26 @@
 require 'sprockets/compressor'
+require 'sprockets/engines'
+require 'sprockets/utils'
 require 'rack/mime'
-require 'tilt'
 
 module Sprockets
   module Processing
+    include Engines
+
     def mime_types(ext = nil)
       if ext.nil?
         Rack::Mime::MIME_TYPES.merge(@mime_types)
       else
-        ext = normalize_extension(ext)
+        ext = Sprockets::Utils.normalize_extension(ext)
         @mime_types[ext] || Rack::Mime::MIME_TYPES[ext]
       end
     end
 
     def register_mime_type(mime_type, ext)
       expire_index!
-      ext = normalize_extension(ext)
+      ext = Sprockets::Utils.normalize_extension(ext)
       @trail.extensions << ext
       @mime_types[ext] = mime_type
-    end
-
-    def engines(ext = nil)
-      if ext
-        ext = normalize_extension(ext)
-        @engines[ext] || Tilt[ext]
-      else
-        @engines.dup
-      end
-    end
-
-    def engine_extensions
-      @engines.keys
     end
 
     def format_extensions
@@ -39,9 +29,8 @@ module Sprockets
 
     def register_engine(ext, klass)
       expire_index!
-      ext = normalize_extension(ext)
-      @trail.extensions << ext
-      @engines[ext] = klass
+      @trail.extensions << ext.to_s
+      super
     end
 
     def processors(mime_type = nil)
@@ -130,15 +119,6 @@ module Sprockets
       def deep_copy_hash(hash)
         initial = Hash.new { |h, k| h[k] = [] }
         hash.inject(initial) { |h, (k, a)| h[k] = a.dup; h }
-      end
-
-      def normalize_extension(extension)
-        extension = extension.to_s
-        if extension[/^\./]
-          extension
-        else
-          ".#{extension}"
-        end
       end
   end
 end

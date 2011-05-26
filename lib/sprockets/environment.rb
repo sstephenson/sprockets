@@ -23,23 +23,15 @@ module Sprockets
 
       @static_root = nil
 
+      @engines = Sprockets.engines
+      @trail.extensions.replace(engine_extensions)
+
       @mime_types = {}
-      @engines = {}
       @processors = Hash.new { |h, k| h[k] = [] }
       @bundle_processors = Hash.new { |h, k| h[k] = [] }
 
       register_mime_type 'text/css', '.css'
       register_mime_type 'application/javascript', '.js'
-
-      register_engine '.jst', JstProcessor
-      register_engine '.ejs', EjsTemplate
-
-      register_engine '.str',    Tilt::StringTemplate
-      register_engine '.erb',    Tilt::ERBTemplate
-      register_engine '.sass',   Tilt::SassTemplate
-      register_engine '.scss',   Tilt::ScssTemplate
-      register_engine '.less',   Tilt::LessTemplate
-      register_engine '.coffee', Tilt::CoffeeScriptTemplate
 
       register_processor 'text/css', DirectiveProcessor
       register_processor 'application/javascript', DirectiveProcessor
