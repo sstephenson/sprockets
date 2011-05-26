@@ -82,7 +82,8 @@ module Sprockets
           template = engine.new(pathname.to_s) { result }
           result = template.render(self, {})
         rescue Exception => e
-          raise e.class, annotate_error_message(e.message)
+          e.instance_variable_set("@message", annotate_error_message(e.message))
+          raise e
         end
       end
 
