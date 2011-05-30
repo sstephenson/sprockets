@@ -148,6 +148,7 @@ module Sprockets
       # Compare the requests `HTTP_IF_MODIFIED_SINCE` against the
       # assets mtime
       def not_modified?(asset, env)
+        return false unless ENV['RACK_ENV'] == 'production'
         env["HTTP_IF_MODIFIED_SINCE"] == asset.mtime.httpdate
       end
 
@@ -183,18 +184,20 @@ module Sprockets
           headers["Content-MD5"]    = asset.digest
 
           # Set caching headers
-          headers["Cache-Control"]  = "public"
-          headers["Last-Modified"]  = asset.mtime.httpdate
-          headers["ETag"]           = etag(asset)
+          if ENV['RACK_ENV'] == 'production'
+            headers["Cache-Control"]  = "public"
+            headers["Last-Modified"]  = asset.mtime.httpdate
+            headers["ETag"]           = etag(asset)
 
-          # If the request url contains a fingerprint, set a long
-          # expires on the response
-          if path_fingerprint(env["PATH_INFO"])
-            headers["Cache-Control"] << ", max-age=31536000"
+            # If the request url contains a fingerprint, set a long
+            # expires on the response
+            if path_fingerprint(env["PATH_INFO"])
+              headers["Cache-Control"] << ", max-age=31536000"
 
-          # Otherwise set `must-revalidate` since the could be modified.
-          else
-            headers["Cache-Control"] << ", must-revalidate"
+              # Otherwise set `must-revalidate` since the could be modified.
+            else
+              headers["Cache-Control"] << ", must-revalidate"
+            end
           end
         end
       end
