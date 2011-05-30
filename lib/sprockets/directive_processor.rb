@@ -96,12 +96,12 @@ module Sprockets
         #
         HEADER_PATTERN = /
           \A \s* (
-            (\/\* ([\s\S]*?) \*\/) |
-            (\#\#\# ([\s\S]*?) \#\#\#) |
-            (\/\/ ([^\n]*) \n?)+ |
-            (\# ([^\n]*) \n?)+
+            (\/\* (?m:.*?) \*\/) |
+            (\#\#\# (?m:.*?) \#\#\#) |
+            (\/\/ .* \n?)+ |
+            (\# .* \n?)+
           )
-        /mx
+        /x
 
         # Directives are denoted by a `=` followed by the name, then
         # argument list.
