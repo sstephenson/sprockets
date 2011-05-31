@@ -30,6 +30,13 @@ class TestServer < Sprockets::TestCase
     @app ||= default_app
   end
 
+  def change_env(new_env="production", &blk)
+    old_env = ENV['RACK_ENV']
+    ENV['RACK_ENV'] = new_env
+    blk.call
+    ENV['RACK_ENV'] = old_env
+  end
+
   test "serve single source file" do
     get "/javascripts/foo.js"
     assert_equal "var foo;\n", last_response.body
@@ -67,31 +74,35 @@ class TestServer < Sprockets::TestCase
   end
 
   test "serve source with etag headers" do
-    get "/javascripts/application.js"
-    assert_equal '"3aede9c70a76e611d43a1c5f1fb1708a"',
-      last_response.headers['ETag']
+    change_env "production" do
+      get "/javascripts/application.js"
+      assert_equal '"3aede9c70a76e611d43a1c5f1fb1708a"',
+        last_response.headers['ETag']
+    end
   end
 
   test "updated file updates the last modified header" do
-    time = Time.now
-    path = fixture_path "server/app/javascripts/foo.js"
-    File.utime(time, time, path)
+    change_env "production" do
+      time = Time.now
+      path = fixture_path "server/app/javascripts/foo.js"
+      File.utime(time, time, path)
 
-    get "/javascripts/application.js"
-    time_before_touching = last_response.headers['Last-Modified']
+      get "/javascripts/application.js"
+      time_before_touching = last_response.headers['Last-Modified']
 
-    get "/javascripts/application.js"
-    time_after_touching = last_response.headers['Last-Modified']
+      get "/javascripts/application.js"
+      time_after_touching = last_response.headers['Last-Modified']
 
-    assert_equal time_before_touching, time_after_touching
+      assert_equal time_before_touching, time_after_touching
 
-    mtime = Time.now + 60
-    File.utime(mtime, mtime, path)
+      mtime = Time.now + 60
+      File.utime(mtime, mtime, path)
 
-    get "/javascripts/application.js"
-    time_after_touching = last_response.headers['Last-Modified']
+      get "/javascripts/application.js"
+      time_after_touching = last_response.headers['Last-Modified']
 
-    assert_not_equal time_before_touching, time_after_touching
+      assert_not_equal time_before_touching, time_after_touching
+    end
   end
 
   test "file updates do not update last modified header for indexed environments" do
@@ -116,34 +127,51 @@ class TestServer < Sprockets::TestCase
     assert_equal time_before_touching, time_after_touching
   end
 
+  test "don't send cache headers in development mode" do
+    change_env "development" do
+      get "/javascripts/bar.js", {},
+        'HTTP_IF_MODIFIED_SINCE' =>
+          File.mtime(fixture_path("server/app/javascripts/bar.js")).httpdate
+
+      assert_equal 200, last_response.status
+      assert_equal nil, last_response.headers['Cache-Control']
+      assert_equal nil, last_response.headers['Last-Modified']
+      assert_equal nil, last_response.headers['ETag']
+    end
+  end
+
   test "not modified response when headers match" do
-    get "/javascripts/application.js"
-    assert_equal 200, last_response.status
+    change_env "production" do
+      get "/javascripts/application.js"
+      assert_equal 200, last_response.status
 
-    path = fixture_path "server/app/javascripts/bar.js"
-    mtime = Time.now + 1
-    File.utime(mtime, mtime, path)
+      path = fixture_path "server/app/javascripts/bar.js"
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, path)
 
-    get "/javascripts/bar.js", {},
-      'HTTP_IF_MODIFIED_SINCE' =>
-        File.mtime(fixture_path("server/app/javascripts/bar.js")).httpdate
+      get "/javascripts/bar.js", {},
+        'HTTP_IF_MODIFIED_SINCE' =>
+          File.mtime(fixture_path("server/app/javascripts/bar.js")).httpdate
 
-    assert_equal 304, last_response.status
-    assert_equal nil, last_response.headers['Content-Type']
-    assert_equal nil, last_response.headers['Content-Length']
+      assert_equal 304, last_response.status
+      assert_equal nil, last_response.headers['Content-Type']
+      assert_equal nil, last_response.headers['Content-Length']
+    end
   end
 
   test "not modified partial response when etags match" do
-    get "/javascripts/application.js?body=1"
-    assert_equal 200, last_response.status
-    etag = last_response.headers['ETag']
+    change_env "production" do
+      get "/javascripts/application.js?body=1"
+      assert_equal 200, last_response.status
+      etag = last_response.headers['ETag']
 
-    get "/javascripts/application.js?body=1", {},
-      'HTTP_IF_NONE_MATCH' => etag
+      get "/javascripts/application.js?body=1", {},
+        'HTTP_IF_NONE_MATCH' => etag
 
-    assert_equal 304, last_response.status
-    assert_equal nil, last_response.headers['Content-Type']
-    assert_equal nil, last_response.headers['Content-Length']
+      assert_equal 304, last_response.status
+      assert_equal nil, last_response.headers['Content-Type']
+      assert_equal nil, last_response.headers['Content-Length']
+    end
   end
 
   test "if sources didnt change the server shouldnt rebundle" do
@@ -159,11 +187,13 @@ class TestServer < Sprockets::TestCase
   end
 
   test "fingerprint digest sets expiration to the future" do
-    get "/javascripts/application.js"
-    md5 = last_response.headers['Content-MD5']
+    change_env "production" do
+      get "/javascripts/application.js"
+      md5 = last_response.headers['Content-MD5']
 
-    get "/javascripts/application-#{md5}.js"
-    assert_match %r{max-age}, last_response.headers['Cache-Control']
+      get "/javascripts/application-#{md5}.js"
+      assert_match %r{max-age}, last_response.headers['Cache-Control']
+    end
   end
 
   test "missing source" do
