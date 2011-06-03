@@ -73,7 +73,7 @@ module Sprockets
       attributes = environment.attributes_for(pathname)
 
       data    = options[:data] || pathname.read
-      result  = data
+      result  = strip_bom(data)
       engines = options[:engines] || environment.processors(content_type) +
                           attributes.engines.reverse
 
@@ -121,6 +121,14 @@ module Sprockets
 
       def logger
         environment.logger
+      end
+
+      def strip_bom(str)
+        if (str[0..2] == "\xef\xbb\xbf")
+          str[3..-1]
+        else
+          str
+        end
       end
   end
 end
