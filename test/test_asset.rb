@@ -290,6 +290,11 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal 4, asset("unicode.js").length
   end
 
+  test "removes BOM from UTF-8 files" do
+    assert_equal "var bom = true;\n", asset("bom.js").to_s
+  end
+
+
   test "asset digest" do
     assert_equal "35d470ef8621efa573dee227a4feaba3", asset("project.js").digest
   end
