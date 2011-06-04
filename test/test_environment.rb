@@ -56,6 +56,11 @@ module EnvironmentTests
     assert_equal "window.JST || (window.JST = {});\nwindow.JST[\"hello\"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('hello: ', name ,'\\n');}return __p.join('');};\n", asset.to_s
   end
 
+  test "eco templates" do
+    asset = @env["goodbye.jst"]
+    assert_equal "window.JST || (window.JST = {});\nwindow.JST[\"goodbye\"] = function(__obj) {\n  if (!__obj) __obj = {};\n  var __out = [], __capture = function(callback) {\n    var out = __out, result;\n    __out = [];\n    callback.call(this);\n    result = __out.join('');\n    __out = out;\n    return __safe(result);\n  }, __sanitize = function(value) {\n    if (value && value.ecoSafe) {\n      return value;\n    } else if (typeof value !== 'undefined' && value != null) {\n      return __escape(value);\n    } else {\n      return '';\n    }\n  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;\n  __safe = __obj.safe = function(value) {\n    if (value && value.ecoSafe) {\n      return value;\n    } else {\n      if (!(typeof value !== 'undefined' && value != null)) value = '';\n      var result = new String(value);\n      result.ecoSafe = true;\n      return result;\n    }\n  };\n  if (!__escape) {\n    __escape = __obj.escape = function(value) {\n      return ('' + value)\n        .replace(/&/g, '&amp;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;')\n        .replace(/\\x22/g, '&quot;');\n    };\n  }\n  (function() {\n    (function() {\n  __out.push('goodbye: ');\n  __out.push(__sanitize(name));\n  __out.push('\\n');\n}).call(this);\n\n  }).call(__obj);\n  __obj.safe = __objSafe, __obj.escape = __escape;\n  return __out.join('');\n};\n", asset.to_s
+  end
+
   test "lookup mime type" do
     assert_equal "application/javascript", @env.mime_types(".js")
     assert_equal "application/javascript", @env.mime_types("js")
