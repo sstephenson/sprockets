@@ -1,4 +1,5 @@
 require 'sprockets/ejs_template'
+require 'sprockets/eco_template'
 require 'sprockets/jst_processor'
 require 'sprockets/utils'
 require 'tilt'
@@ -30,6 +31,7 @@ module Sprockets
   register_engine '.coffee', Tilt::CoffeeScriptTemplate
   register_engine '.erb',    Tilt::ERBTemplate
   register_engine '.ejs',    EjsTemplate
+  register_engine '.eco',    EcoTemplate
   register_engine '.jst',    JstProcessor
   register_engine '.less',   Tilt::LessTemplate
   register_engine '.sass',   Tilt::SassTemplate
