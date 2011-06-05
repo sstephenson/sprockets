@@ -244,6 +244,18 @@ module Sprockets
         context.require_asset(path)
       end
 
+      def process_ignore_directive(path)
+        if @compat
+          if path =~ /<([^>]+)>/
+            path = $1
+          else
+            path = "./#{path}" unless relative?(path)
+          end
+        end
+
+        context.ignore_asset(path)
+      end
+
       # `require_self` causes the body of the current file to be
       # inserted before any subsequent `require` or `include`
       # directives. Useful in CSS files, where it's common for the

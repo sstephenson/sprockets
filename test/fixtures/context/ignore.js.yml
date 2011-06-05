@@ -1,0 +1,5 @@
+require:
+  - foo.js
+  - bar.js
+ignore:
+  - bar.js
