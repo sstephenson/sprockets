@@ -67,7 +67,7 @@ module Sprockets
       elsif not_modified?(asset, env) || etag_match?(asset, env)
         logger.info "#{msg} 304 Not Modified #{tag}"
 
-        # Return a 403 Not Modified
+        # Return a 304 Not Modified
         not_modified_response(asset, env)
 
       else
@@ -192,7 +192,7 @@ module Sprockets
           if path_fingerprint(env["PATH_INFO"])
             headers["Cache-Control"] << ", max-age=31536000"
 
-          # Otherwise set `must-revalidate` since the could be modified.
+          # Otherwise set `must-revalidate` since the asset could be modified.
           else
             headers["Cache-Control"] << ", must-revalidate"
           end
