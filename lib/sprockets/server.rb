@@ -169,7 +169,7 @@ module Sprockets
       # Returns a 200 OK response tuple
       def ok_response(asset, env)
         if body_only?(env)
-          [ 200, headers(env, asset, asset.body.length), [asset.body] ]
+          [ 200, headers(env, asset, Rack::Utils.bytesize(asset.body)), [asset.body] ]
         else
           [ 200, headers(env, asset, asset.length), asset ]
         end
