@@ -1,3 +1,5 @@
+# encoding: binary
+
 require 'sprockets/errors'
 require 'pathname'
 require 'set'
