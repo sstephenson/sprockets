@@ -4,3 +4,4 @@ doc
 docs
 pkg
 tmp
+*.rbc

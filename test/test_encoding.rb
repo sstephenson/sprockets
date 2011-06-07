@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+require "sprockets_test"
 
 class EncodingTest < Sprockets::TestCase
   def setup

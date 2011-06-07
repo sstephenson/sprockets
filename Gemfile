@@ -1,12 +1,8 @@
 source :rubygems
+
 gemspec
 
-if ENV['CI']
-  platforms :ruby do
-    gem 'therubyracer'
-  end
-
-  platforms :jruby do
-    gem 'therubyrhino'
-  end
+group :test do
+  gem 'therubyrhino', :platform => :jruby
+  gem 'therubyracer', :platform => :ruby
 end
