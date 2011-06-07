@@ -209,12 +209,16 @@ module EnvironmentTests
 
   test "precompile" do
     filename = fixture_path("public/gallery-f1598cfbaf2a26f20367e4046957f6e0.js")
+    filename_gz = "#{filename}.gz"
     begin
       assert !File.exist?(filename)
       @env.precompile("gallery.js")
       assert File.exist?(filename)
+      assert File.exist?(filename_gz)
     ensure
-      File.unlink(filename) if File.exist?(filename)
+      [filename, filename_gz].each do |f|
+        File.unlink(f) if File.exist?(f)
+      end
     end
   end
 
@@ -226,9 +230,11 @@ module EnvironmentTests
       @env.precompile("mobile/*")
 
       assert File.exist?(dirname)
-      assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js"))
-      assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js"))
-      assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css"))
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css#{gzipped}"))
+      end
     ensure
       FileUtils.rm_rf(dirname)
     end
@@ -242,9 +248,11 @@ module EnvironmentTests
       @env.precompile(/mobile\/.*/)
 
       assert File.exist?(dirname)
-      assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js"))
-      assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js"))
-      assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css"))
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css#{gzipped}"))
+      end
     ensure
       FileUtils.rm_rf(dirname)
     end
@@ -256,6 +264,7 @@ module EnvironmentTests
       assert !File.exist?(filename)
       @env.precompile("hello.txt")
       assert File.exist?(filename)
+      assert !File.exist?("#{filename}.gz")
     ensure
       File.unlink(filename) if File.exist?(filename)
     end
