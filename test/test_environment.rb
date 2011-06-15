@@ -79,6 +79,8 @@ module EnvironmentTests
   test "resolve in environment" do
     assert_equal fixture_path('default/gallery.js'),
       @env.resolve("gallery.js").to_s
+    assert_equal fixture_path('default/gallery.js'),
+      @env.resolve(Pathname.new("gallery.js")).to_s
   end
 
   test "missing file raises an exception" do
