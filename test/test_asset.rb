@@ -27,7 +27,7 @@ module AssetTests
   end
 
   test "digest" do
-    assert_equal "a64bb1a34523baef725ad44d492269e1", @asset.digest
+    assert @asset.digest
   end
 
   test "each" do
@@ -38,6 +38,10 @@ module AssetTests
 
   test "stale?" do
     assert !@asset.stale?
+  end
+
+  test "fresh?" do
+    assert @asset.fresh?
   end
 
   test "to_s" do
@@ -113,6 +117,87 @@ class StaticAssetTest < Sprockets::TestCase
 
   test "body is entire contents" do
     assert_equal @asset.to_s, @asset.body
+  end
+
+  test "asset is fresh if its mtime and contents are the same" do
+    assert @asset.fresh?
+  end
+
+  test "asset is stale if its environment has changed" do
+    assert @asset.fresh?
+    @env.prepend_path fixture_path('default')
+    assert @asset.stale?
+  end
+
+  test "asset is fresh if its mtime is changed but its contents is the same" do
+    filename = fixture_path('public/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a" }
+      asset = @env['test.js']
+
+      assert asset.fresh?
+
+      File.open(filename, 'w') { |f| f.write "a" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, filename)
+
+      assert asset.fresh?
+    end
+  end
+
+  test "asset is stale when its contents has changed" do
+    filename = fixture_path('public/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a" }
+      asset = @env['test.js']
+
+      assert asset.fresh?
+
+      File.open(filename, 'w') { |f| f.write "b" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, filename)
+
+      assert asset.stale?
+    end
+  end
+
+  test "asset is stale if the file is removed" do
+    filename = fixture_path('public/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a" }
+      asset = @env['test.js']
+
+      assert asset.fresh?
+
+      File.unlink(filename)
+
+      assert asset.stale?
+    end
+  end
+
+  test "serializing asset to and from hash" do
+    expected = @asset
+    hash     = {}
+    @asset.encode_with(hash)
+    actual   = @env.asset_from_hash(hash)
+
+    assert_kind_of Sprockets::StaticAsset, actual
+    assert_equal expected.logical_path, actual.logical_path
+    assert_equal expected.pathname, actual.pathname
+    assert_equal expected.content_type, actual.content_type
+    assert_equal expected.length, actual.length
+    assert_equal expected.digest, actual.digest
+
+    assert_equal expected.dependencies, actual.dependencies
+    assert_equal expected.to_a, actual.to_a
+    assert_equal expected.body, actual.body
+    assert_equal expected.to_s, actual.to_s
+
+    assert actual.eql?(expected)
+    assert expected.eql?(actual)
   end
 end
 
@@ -281,13 +366,6 @@ class BundledAssetTest < Sprockets::TestCase
       asset("filename.js").to_s
   end
 
-  test "asset mtime is the latest mtime of all processed sources" do
-    mtime = Time.now
-    path  = resolve("project.js")
-    File.utime(mtime, mtime, path.to_s)
-    assert_equal File.mtime(path), asset("application.js").mtime
-  end
-
   test "asset inherits the format extension and content type of the original file" do
     asset = asset("project.js")
     assert_equal "application/javascript", asset.content_type
@@ -315,65 +393,121 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "asset digest" do
-    assert_equal "35d470ef8621efa573dee227a4feaba3", asset("project.js").digest
+    assert asset("project.js").digest
+  end
+
+  test "asset is fresh if its mtime and contents are the same" do
+    assert asset("application.js").fresh?
+  end
+
+  test "asset is stale if its environment has changed" do
+    asset = asset("application.js")
+    assert asset.fresh?
+    @env.prepend_path fixture_path("default")
+    assert asset.stale?
+  end
+
+  test "asset is fresh if its mtime is changed but its contents is the same" do
+  end
+
+  test "asset is stale when its contents has changed" do
+    filename = fixture_path('asset/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a" }
+      asset = @env['test.js']
+
+      assert asset.fresh?
+
+      File.open(filename, 'w') { |f| f.write "b" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, filename)
+
+      assert asset.stale?
+    end
+  end
+
+  test "asset is stale if the file is removed" do
+    filename = fixture_path('asset/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a" }
+      asset = @env['test.js']
+
+      assert asset.fresh?
+
+      File.unlink(filename)
+
+      assert asset.stale?
+    end
   end
 
   test "asset is stale when one of its source files is modified" do
-    asset = asset("application.js")
-    assert !asset.stale?
+    main = fixture_path('asset/test-main.js')
+    dep  = fixture_path('asset/test-dep.js')
 
-    mtime = Time.now + 1
-    File.utime(mtime, mtime, resolve("project.js").to_s)
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write "//= require test-dep\n" }
+      File.open(dep, 'w') { |f| f.write "a" }
+      asset = @env['test-main.js']
 
-    assert asset.stale?
+      assert asset.fresh?
+
+      File.open(dep, 'w') { |f| f.write "b" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dep)
+
+      assert asset.stale?
+    end
   end
 
   test "asset is stale if a file is added to its require directory" do
     asset = asset("tree/all_with_require_directory.js")
-    assert !asset.stale?
+    assert asset.fresh?
 
     dirname  = File.join(fixture_path("asset"), "tree/all")
     filename = File.join(dirname, "z.js")
 
-    begin
+    sandbox filename do
       File.open(filename, 'w') { |f| f.write "z" }
       mtime = Time.now + 1
       File.utime(mtime, mtime, dirname)
 
       assert asset.stale?
-    ensure
-      File.unlink(filename) if File.exist?(filename)
-      assert !File.exist?(filename)
     end
   end
 
   test "asset is stale if a file is added to its require tree" do
     asset = asset("tree/all_with_require_tree.js")
-    assert !asset.stale?
+    assert asset.fresh?
 
     dirname  = File.join(fixture_path("asset"), "tree/all/b/c")
     filename = File.join(dirname, "z.js")
 
-    begin
+    sandbox filename do
       File.open(filename, 'w') { |f| f.write "z" }
       mtime = Time.now + 1
       File.utime(mtime, mtime, dirname)
 
       assert asset.stale?
-    ensure
-      File.unlink(filename) if File.exist?(filename)
-      assert !File.exist?(filename)
     end
   end
 
   test "asset is stale if its declared dependency changes" do
-    asset = asset("sprite.css")
-    assert !asset.stale?
+    sprite = fixture_path('asset/sprite.css.erb')
+    image  = fixture_path('asset/POW.png')
 
-    mtime = Time.now + 1
-    File.utime(mtime, mtime, resolve("POW.png").to_s)
+    sandbox sprite, image do
+      asset = @env['sprite.css']
 
-    assert asset.stale?
+      assert asset.fresh?
+
+      File.open(image, 'w') { |f| f.write "(change)" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, image)
+
+      assert asset.stale?
+    end
   end
 
   test "legacy constants.yml" do
@@ -383,6 +517,28 @@ class BundledAssetTest < Sprockets::TestCase
 
   test "multiple charset defintions are stripped from css bundle" do
     assert_equal "@charset \"UTF-8\";\n.foo {}\n\n.bar {}\n", asset("charset.css").to_s
+  end
+
+  test "serializing asset to and from hash" do
+    expected = @asset
+    hash     = {}
+    @asset.encode_with(hash)
+    actual   = @env.asset_from_hash(hash)
+
+    assert_kind_of Sprockets::BundledAsset, actual
+    assert_equal expected.logical_path, actual.logical_path
+    assert_equal expected.pathname, actual.pathname
+    assert_equal expected.body, actual.body
+    assert_equal expected.source, actual.source
+    assert_equal expected.content_type, actual.content_type
+    assert_equal expected.length, actual.length
+    assert_equal expected.digest, actual.digest
+    assert_equal expected.dependencies, actual.dependencies
+    assert_equal expected.to_a, actual.to_a
+    assert_equal expected.to_s, actual.to_s
+
+    assert actual.eql?(expected)
+    assert expected.eql?(actual)
   end
 
   test "should not fail if home is not set in environment" do
@@ -399,7 +555,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   def asset(logical_path)
-    @env.index[logical_path]
+    @env[logical_path]
   end
 
   def resolve(logical_path)

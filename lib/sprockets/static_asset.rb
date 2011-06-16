@@ -1,20 +1,55 @@
+require 'sprockets/dependency'
 require 'fileutils'
 require 'time'
 require 'zlib'
 
 module Sprockets
   class StaticAsset
+    attr_reader :environment
     attr_reader :logical_path, :pathname
     attr_reader :content_type, :mtime, :length, :digest
 
+    def self.from_hash(environment, hash)
+      asset = allocate
+      asset.init_with(environment, hash)
+      asset
+    end
+
     def initialize(environment, logical_path, pathname, digest = nil)
+      @environment = environment
+
       @logical_path = logical_path.to_s
       @pathname     = Pathname.new(pathname)
       @content_type = environment.content_type_of(pathname)
 
-      @mtime  = @pathname.mtime
-      @length = @pathname.size
-      @digest = digest || environment.digest.file(pathname).hexdigest
+      @mtime      = environment.stat(@pathname).mtime
+      @length     = environment.stat(@pathname).size
+      @digest     = environment.file_digest(pathname).hexdigest
+      @dependency = Dependency.new(environment.digest.hexdigest, @pathname.to_s, @mtime, @digest)
+    end
+
+    def init_with(environment, coder)
+      @environment = environment
+
+      @logical_path = coder['logical_path'].to_s
+      @pathname     = Pathname.new(coder['pathname'])
+      @content_type = coder['content_type']
+      @mtime        = coder['mtime'].is_a?(String) ? Time.parse(coder['mtime']) : coder['mtime']
+      @length       = coder['length']
+      @digest       = coder['digest']
+      @dependency   = Dependency.from_hash(coder['dependency'])
+    end
+
+    def encode_with(coder)
+      coder['class']        = 'StaticAsset'
+      coder['logical_path'] = logical_path
+      coder['pathname']     = pathname.to_s
+      coder['content_type'] = content_type
+      coder['mtime']        = mtime
+      coder['digest']       = digest
+      coder['length']       = length
+      coder['dependency']   = {}
+      @dependency.encode_with(coder['dependency'])
     end
 
     def dependencies
@@ -33,10 +68,12 @@ module Sprockets
       to_s
     end
 
+    def fresh?
+      @dependency.fresh?(environment)
+    end
+
     def stale?
-      mtime < pathname.mtime
-    rescue Errno::ENOENT
-      true
+      !fresh?
     end
 
     def each
@@ -49,6 +86,14 @@ module Sprockets
 
     def to_s
       pathname.open('rb') { |f| f.read }
+    end
+
+    def inspect
+      "#<#{self.class}:0x#{object_id.to_s(16)} " +
+        "pathname=#{pathname.to_s.inspect}, " +
+        "mtime=#{mtime.inspect}, " +
+        "digest=#{digest.inspect}" +
+        ">"
     end
 
     def write_to(filename, options = {})

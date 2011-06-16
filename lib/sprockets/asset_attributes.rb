@@ -23,6 +23,15 @@ module Sprockets
         sub(/^#{Regexp.escape(environment.root)}\//, '')
     end
 
+    def index_path
+      if basename_without_extensions.to_s == 'index'
+        pathname.to_s
+      else
+        basename = "#{basename_without_extensions}/index#{extensions.join}"
+        pathname.dirname.to_s == '.' ? basename : pathname.dirname.join(basename).to_s
+      end
+    end
+
     def format_extension
       extensions.detect { |ext| @environment.mime_types(ext) }
     end
@@ -35,6 +44,12 @@ module Sprockets
       end
 
       exts.select { |ext| @environment.engines(ext) }
+    end
+
+    def without_engine_extensions
+      engine_extensions.inject(pathname) do |p, ext|
+        p.sub(ext, '')
+      end
     end
 
     def engines
@@ -63,6 +78,19 @@ module Sprockets
             engine_content_type ||
             'application/octet-stream'
         end
+      end
+    end
+
+    def path_fingerprint
+      pathname.basename(extensions.join).to_s =~ /-([0-9a-f]{7,40})$/ ? $1 : nil
+    end
+
+    def path_with_fingerprint(digest)
+      if path_fingerprint
+        path.sub($1, digest)
+      else
+        basename = "#{pathname.basename(extensions.join)}-#{digest}#{extensions.join}"
+        pathname.dirname.to_s == '.' ? basename : pathname.dirname.join(basename).to_s
       end
     end
   end

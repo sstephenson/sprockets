@@ -1,24 +1,20 @@
-require 'sprockets/asset_attributes'
+require 'sprockets/base'
 require 'sprockets/context'
-require 'sprockets/digest'
 require 'sprockets/directive_processor'
-require 'sprockets/environment_index'
+require 'sprockets/index'
+
 require 'hike'
 require 'logger'
 require 'pathname'
 require 'tilt'
 
 module Sprockets
-  class Environment
-    include Digest, Server, Processing, StaticCompilation
-
-    attr_accessor :logger, :context_class
-
+  class Environment < Base
     def initialize(root = ".")
       @trail = Hike::Trail.new(root)
 
-      @logger = Logger.new($stderr)
-      @logger.level = Logger::FATAL
+      self.logger = Logger.new($stderr)
+      self.logger.level = Logger::FATAL
 
       @context_class = Class.new(Context)
 
@@ -48,84 +44,31 @@ module Sprockets
       yield self if block_given?
     end
 
-    def root
-      @trail.root
-    end
-
-    def paths
-      @trail.paths#.dup
-    end
-
-    def append_path(path)
-      expire_index!
-      @trail.paths.push(path)
-    end
-
-    def prepend_path(path)
-      expire_index!
-      @trail.paths.unshift(path)
-    end
-
-    def clear_paths
-      expire_index!
-      @trail.paths.clear
-    end
-
-    def extensions
-      @trail.extensions.dup
-    end
-
-    def precompile(*paths)
-      index.precompile(*paths)
-    end
-
     def index
-      EnvironmentIndex.new(self, @trail, @static_root)
+      Index.new(self)
     end
 
-    def resolve(logical_path, options = {}, &block)
-      index.resolve(logical_path, options, &block)
-    end
-
-    def find_asset(logical_path, options = {})
-      logical_path = Pathname.new(logical_path)
-      index = options[:_index] || self.index
-
-      if asset = find_fresh_asset_from_cache(logical_path)
-        asset
-      elsif asset = index.find_asset(logical_path, options.merge(:_environment => self))
-        @cache[logical_path.to_s] = asset
-        asset.to_a.each { |a| @cache[a.pathname.to_s] = a }
-        asset
-      end
-    end
-    alias_method :[], :find_asset
-
-    def attributes_for(path)
-      AssetAttributes.new(self, path)
-    end
-
-    def content_type_of(path)
-      attributes_for(path).content_type
+    def find_asset(path, options = {})
+      cache_asset(path) { super }
     end
 
     protected
-      def expire_index!
-        @cache = {}
+      def cache_get_asset(path)
+        if (asset = @assets[path.to_s]) && !asset.stale?
+          asset
+        else
+          super
+        end
       end
 
-      def find_fresh_asset_from_cache(logical_path)
-        if asset = @cache[logical_path.to_s]
-          if path_fingerprint(logical_path)
-            asset
-          elsif asset.stale?
-            nil
-          else
-            asset
-          end
-        else
-          nil
-        end
+      def cache_set_asset(path, asset)
+        @assets[path.to_s] = asset
+        super
+      end
+
+      def expire_index!
+        @digest = nil
+        @assets = {}
       end
   end
 end

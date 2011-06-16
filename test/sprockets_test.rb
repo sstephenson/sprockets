@@ -1,6 +1,7 @@
 require "test/unit"
 require "sprockets"
 require "tilt"
+require "fileutils"
 
 if defined? Encoding
   Encoding.default_external = 'utf-8'
@@ -22,5 +23,34 @@ class Sprockets::TestCase < Test::Unit::TestCase
 
   def fixture_path(path)
     File.join(FIXTURE_ROOT, path)
+  end
+
+  def sandbox(*paths)
+    backup_paths = paths.select { |path| File.exist?(path) }
+    remove_paths = paths.select { |path| !File.exist?(path) }
+
+    begin
+      backup_paths.each do |path|
+        FileUtils.cp(path, "#{path}.orig")
+      end
+
+      yield
+    ensure
+      backup_paths.each do |path|
+        if File.exist?("#{path}.orig")
+          FileUtils.mv("#{path}.orig", path)
+        end
+
+        assert !File.exist?("#{path}.orig")
+      end
+
+      remove_paths.each do |path|
+        if File.exist?(path)
+          FileUtils.rm_rf(path)
+        end
+
+        assert !File.exist?(path)
+      end
+    end
   end
 end

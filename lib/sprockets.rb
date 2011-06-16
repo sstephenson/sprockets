@@ -14,16 +14,19 @@ module Sprockets
   autoload :EngineError,             "sprockets/errors"
   autoload :Engines,                 "sprockets/engines"
   autoload :Environment,             "sprockets/environment"
-  autoload :EnvironmentIndex,        "sprockets/environment_index"
   autoload :Error,                   "sprockets/errors"
   autoload :FileNotFound,            "sprockets/errors"
+  autoload :Index,                   "sprockets/index"
   autoload :JstProcessor,            "sprockets/jst_processor"
   autoload :Processing,              "sprockets/processing"
   autoload :Processor,               "sprockets/processor"
   autoload :Server,                  "sprockets/server"
   autoload :StaticAsset,             "sprockets/static_asset"
-  autoload :StaticCompilation,       "sprockets/static_compilation"
   autoload :Utils,                   "sprockets/utils"
+
+  module Cache
+    autoload :FileStore, "sprockets/cache/file_store"
+  end
 end
 
 # TODO: Remove in 2.0.0 final

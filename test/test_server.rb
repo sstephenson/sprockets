@@ -67,31 +67,37 @@ class TestServer < Sprockets::TestCase
   end
 
   test "serve source with etag headers" do
+    digest = @env['application.js'].digest
+
     get "/javascripts/application.js"
-    assert_equal '"3aede9c70a76e611d43a1c5f1fb1708a"',
+    assert_equal "\"#{digest}\"",
       last_response.headers['ETag']
   end
 
   test "updated file updates the last modified header" do
     time = Time.now
     path = fixture_path "server/app/javascripts/foo.js"
-    File.utime(time, time, path)
 
-    get "/javascripts/application.js"
-    time_before_touching = last_response.headers['Last-Modified']
+    sandbox path do
+      File.utime(time, time, path)
 
-    get "/javascripts/application.js"
-    time_after_touching = last_response.headers['Last-Modified']
+      get "/javascripts/application.js"
+      time_before_modifying = last_response.headers['Last-Modified']
 
-    assert_equal time_before_touching, time_after_touching
+      get "/javascripts/application.js"
+      time_after_modifying = last_response.headers['Last-Modified']
 
-    mtime = Time.now + 60
-    File.utime(mtime, mtime, path)
+      assert_equal time_before_modifying, time_after_modifying
 
-    get "/javascripts/application.js"
-    time_after_touching = last_response.headers['Last-Modified']
+      mtime = Time.now + 60
+      File.open(path, 'w') { |f| f.write "(change)" }
+      File.utime(mtime, mtime, path)
 
-    assert_not_equal time_before_touching, time_after_touching
+      get "/javascripts/application.js"
+      time_after_modifying = last_response.headers['Last-Modified']
+
+      assert_not_equal time_before_modifying, time_after_modifying
+    end
   end
 
   test "file updates do not update last modified header for indexed environments" do
@@ -184,22 +190,24 @@ class TestServer < Sprockets::TestCase
   end
 
   test "add new source to tree" do
-    get "/javascripts/tree.js"
-    assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\n", last_response.body
+    filename = fixture_path("server/app/javascripts/baz.js")
 
-    File.open(fixture_path("server/app/javascripts/baz.js"), "w") do |f|
-      f.puts "var baz;"
-    end
-
-    path = fixture_path "server/app/javascripts"
-    mtime = Time.now + 60
-    File.utime(mtime, mtime, path)
-
-    begin
+    sandbox filename do
       get "/javascripts/tree.js"
-      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\n", last_response.body
-    ensure
-      FileUtils.rm(fixture_path("server/app/javascripts/baz.js"))
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\n",
+        last_response.body
+
+      File.open(filename, "w") do |f|
+        f.puts "var baz;"
+      end
+
+      path = fixture_path "server/app/javascripts"
+      mtime = Time.now + 60
+      File.utime(mtime, mtime, path)
+
+      get "/javascripts/tree.js"
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\n",
+        last_response.body
     end
   end
 

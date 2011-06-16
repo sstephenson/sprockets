@@ -11,6 +11,10 @@ module EnvironmentTests
     assert_equal Dir.pwd, @env.root
   end
 
+  test "default logger level is set to fatal" do
+    assert_equal Logger::FATAL, @env.logger.level
+  end
+
   test "active css compressor" do
     assert_nil @env.css_compressor
   end
@@ -126,8 +130,8 @@ module EnvironmentTests
   end
 
   test "find asset with digest" do
-    assert_equal "Hello world\n",
-      @env["hello-f0ef7081e1539ac00ef5b761b4fb01b3.txt"].to_s
+    digest = @env["hello.txt"].digest
+    assert_equal "Hello world\n", @env["hello-#{digest}.txt"].to_s
   end
 
   test "find asset with invalid digest" do
@@ -179,29 +183,26 @@ module EnvironmentTests
       @env[fixture_path("default/mobile/a.js")].logical_path
   end
 
-  test "lookup asset digest" do
-    assert_equal "f1598cfbaf2a26f20367e4046957f6e0",
-      @env["gallery.js"].digest
-  end
-
   test "path for asset" do
-    assert_equal "/gallery-f1598cfbaf2a26f20367e4046957f6e0.js", @env.path("gallery.js")
+    digest = @env["gallery.js"].digest
+    assert_equal "/gallery-#{digest}.js", @env.path("gallery.js")
     assert_equal "/gallery.js", @env.path("gallery.js", false)
-    assert_equal "/gallery-f1598cfbaf2a26f20367e4046957f6e0.js", @env.path("/gallery.js")
-    assert_equal "/assets/gallery-f1598cfbaf2a26f20367e4046957f6e0.js",
+    assert_equal "/gallery-#{digest}.js", @env.path("/gallery.js")
+    assert_equal "/assets/gallery-#{digest}.js",
       @env.path("gallery.js", true, "/assets")
   end
 
   test "url for asset" do
     env = Rack::MockRequest.env_for("/")
+    digest = @env["gallery.js"].digest
 
-    assert_equal "http://example.org/gallery-f1598cfbaf2a26f20367e4046957f6e0.js",
+    assert_equal "http://example.org/gallery-#{digest}.js",
       @env.url(env, "gallery.js")
     assert_equal "http://example.org/gallery.js",
       @env.url(env, "gallery.js", false)
-    assert_equal "http://example.org/gallery-f1598cfbaf2a26f20367e4046957f6e0.js",
+    assert_equal "http://example.org/gallery-#{digest}.js",
       @env.url(env, "/gallery.js")
-    assert_equal "http://example.org/assets/gallery-f1598cfbaf2a26f20367e4046957f6e0.js",
+    assert_equal "http://example.org/assets/gallery-#{digest}.js",
       @env.url(env, "gallery.js", true, "assets")
   end
 
@@ -210,71 +211,77 @@ module EnvironmentTests
   end
 
   test "precompile" do
-    filename = fixture_path("public/gallery-f1598cfbaf2a26f20367e4046957f6e0.js")
+    digest      = @env["gallery.js"].digest
+    filename    = fixture_path("public/gallery-#{digest}.js")
     filename_gz = "#{filename}.gz"
-    begin
+
+    sandbox filename, filename_gz do
       assert !File.exist?(filename)
       @env.precompile("gallery.js")
       assert File.exist?(filename)
       assert File.exist?(filename_gz)
-    ensure
-      [filename, filename_gz].each do |f|
-        File.unlink(f) if File.exist?(f)
-      end
     end
   end
 
   test "precompile glob" do
     dirname = fixture_path("public/mobile")
 
-    begin
+    a_digest = @env["mobile/a.js"].digest
+    b_digest = @env["mobile/b.js"].digest
+    c_digest = @env["mobile/c.css"].digest
+
+    sandbox dirname do
       assert !File.exist?(dirname)
       @env.precompile("mobile/*")
 
       assert File.exist?(dirname)
       [nil, '.gz'].each do |gzipped|
-        assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js#{gzipped}"))
-        assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js#{gzipped}"))
-        assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css#{gzipped}"))
+        assert File.exist?(File.join(dirname, "a-#{a_digest}.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b-#{b_digest}.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c-#{c_digest}.css#{gzipped}"))
       end
-    ensure
-      FileUtils.rm_rf(dirname)
     end
   end
 
   test "precompile regexp" do
     dirname = fixture_path("public/mobile")
 
-    begin
+    a_digest = @env["mobile/a.js"].digest
+    b_digest = @env["mobile/b.js"].digest
+    c_digest = @env["mobile/c.css"].digest
+
+    sandbox dirname do
       assert !File.exist?(dirname)
       @env.precompile(/mobile\/.*/)
 
       assert File.exist?(dirname)
       [nil, '.gz'].each do |gzipped|
-        assert File.exist?(File.join(dirname, "a-172ecf751b024e2c68b1da265523b202.js#{gzipped}"))
-        assert File.exist?(File.join(dirname, "b-5e5f944f87f43e1ddec5c8dc109e5f8d.js#{gzipped}"))
-        assert File.exist?(File.join(dirname, "c-4127d837671de30f7e9cb8e9bec82285.css#{gzipped}"))
+        assert File.exist?(File.join(dirname, "a-#{a_digest}.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b-#{b_digest}.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c-#{c_digest}.css#{gzipped}"))
       end
-    ensure
-      FileUtils.rm_rf(dirname)
     end
   end
 
   test "precompile static asset" do
-    filename = fixture_path("public/hello-f0ef7081e1539ac00ef5b761b4fb01b3.txt")
-    begin
+    digest   = @env["hello.txt"].digest
+    filename = fixture_path("public/hello-#{digest}.txt")
+
+    sandbox filename do
       assert !File.exist?(filename)
       @env.precompile("hello.txt")
       assert File.exist?(filename)
       assert !File.exist?("#{filename}.gz")
-    ensure
-      File.unlink(filename) if File.exist?(filename)
     end
   end
 
   test "CoffeeScript files are compiled in a closure" do
     script = @env["coffee"].to_s
     assert_equal "undefined", ExecJS.exec(script)
+  end
+
+  test "assets environment reference is its caller" do
+    assert_equal @env, @env["gallery.js"].environment
   end
 end
 
@@ -291,6 +298,7 @@ class TestEnvironment < Sprockets::TestCase
     Sprockets::Environment.new(".") do |env|
       env.append_path(fixture_path('default'))
       env.static_root = fixture_path('public')
+      env.cache = {}
       yield env if block_given?
     end
   end
@@ -299,21 +307,44 @@ class TestEnvironment < Sprockets::TestCase
     @env = new_environment
   end
 
+  test "changing logger" do
+    @env.logger = Logger.new($stderr)
+  end
+
+  test "changing paths" do
+    old_digest = @env.digest
+
+    @env.clear_paths
+    @env.append_path(fixture_path('asset'))
+
+    assert_not_equal old_digest, @env.digest
+  end
+
   test "register mime type" do
+    old_digest = @env.digest
     assert !@env.mime_types("jst")
+
     @env.register_mime_type("application/javascript", "jst")
+
     assert_equal "application/javascript", @env.mime_types("jst")
+    assert_not_equal old_digest, @env.digest
   end
 
   test "register bundle processor" do
+    old_digest = @env.digest
     assert !@env.bundle_processors('text/css').include?(WhitespaceCompressor)
+
     @env.register_bundle_processor 'text/css', WhitespaceCompressor
+
     assert @env.bundle_processors('text/css').include?(WhitespaceCompressor)
+    assert_not_equal old_digest, @env.digest
   end
 
   test "changing static root expires old assets" do
+    old_digest = @env.digest
     assert @env["compiled.js"]
-    @env.static_root = nil
+    @env.static_root = fixture_path('static')
+    assert_not_equal old_digest, @env.digest
     assert_nil @env["compiled.js"]
   end
 
@@ -334,12 +365,17 @@ class TestEnvironment < Sprockets::TestCase
   end
 
   test "changing css compressor expires old assets" do
+    old_digest = @env.digest
     assert_equal ".gallery {\n  color: red;\n}\n", @env["gallery.css"].to_s
+
     @env.css_compressor = WhitespaceCompressor
+
     assert_equal ".gallery{color:red;}", @env["gallery.css"].to_s
+    assert_not_equal old_digest, @env.digest
   end
 
   test "setting css compressor to nil clears current compressor" do
+    old_digest = @env.digest
     @env.css_compressor = WhitespaceCompressor
     assert @env.css_compressor
     @env.css_compressor = nil
@@ -347,9 +383,13 @@ class TestEnvironment < Sprockets::TestCase
   end
 
   test "changing js compressor expires old assets" do
+    old_digest = @env.digest
     assert_equal "var Gallery = {};\n", @env["gallery.js"].to_s
+
     @env.js_compressor = WhitespaceCompressor
+
     assert_equal "varGallery={};", @env["gallery.js"].to_s
+    assert_not_equal old_digest, @env.digest
   end
 
   test "setting js compressor to nil clears current compressor" do
@@ -360,30 +400,40 @@ class TestEnvironment < Sprockets::TestCase
   end
 
   test "changing paths expires old assets" do
+    old_digest = @env.digest
     assert @env["gallery.css"]
+
     @env.clear_paths
+
+    assert_not_equal old_digest, @env.digest
     assert_nil @env["gallery.css"]
   end
 
   test "changing digest implementation class" do
+    old_digest = @env.digest
+    old_asset_digest = @env["gallery.js"].digest
+
     require 'digest/sha1'
     @env.digest_class = Digest::SHA1
-    assert_equal "4088f98ded5fdf9b60db467cb6c346926d9bedfc",
-      @env["gallery.js"].digest
+
+    assert_not_equal old_digest, @env.digest
+    assert_not_equal old_asset_digest, @env["gallery.js"].digest
   end
 
   test "changing digest key prefix" do
-    assert_equal "f1598cfbaf2a26f20367e4046957f6e0",
-      @env["gallery.js"].digest
+    old_digest = @env.digest
+    old_asset_digest = @env["gallery.js"].digest
+
     @env.digest_key_prefix = 'v2'
-    assert_equal "cc460290b9ac52f59c058f2d6f785686",
-      @env["gallery.js"].digest
+
+    assert_not_equal old_digest, @env.digest
+    assert_not_equal old_asset_digest, @env["gallery.js"].digest
   end
 
   test "bundled asset is stale if its mtime is updated or deleted" do
     filename = File.join(fixture_path("default"), "tmp.js")
 
-    begin
+    sandbox filename do
       assert_nil @env["tmp.js"]
 
       File.open(filename, 'w') { |f| f.puts "foo" }
@@ -396,16 +446,13 @@ class TestEnvironment < Sprockets::TestCase
 
       File.unlink(filename)
       assert_nil @env["tmp.js"]
-    ensure
-      File.unlink(filename) if File.exist?(filename)
-      assert !File.exist?(filename)
     end
   end
 
   test "static asset is stale if its mtime is updated or deleted" do
     filename = File.join(fixture_path("default"), "tmp.png")
 
-    begin
+    sandbox filename do
       assert_nil @env["tmp.png"]
 
       File.open(filename, 'w') { |f| f.puts "foo" }
@@ -418,9 +465,6 @@ class TestEnvironment < Sprockets::TestCase
 
       File.unlink(filename)
       assert_nil @env["tmp.png"]
-    ensure
-      File.unlink(filename) if File.exist?(filename)
-      assert !File.exist?(filename)
     end
   end
 
@@ -440,6 +484,7 @@ class TestEnvironment < Sprockets::TestCase
   end
 
   test "registering engine adds to the environments extensions" do
+    old_digest = @env.digest
     assert !@env.engines[".foo"]
     assert !@env.extensions.include?(".foo")
 
@@ -447,6 +492,7 @@ class TestEnvironment < Sprockets::TestCase
 
     assert @env.engines[".foo"]
     assert @env.extensions.include?(".foo")
+    assert_not_equal old_digest, @env.digest
   end
 
   test "seperate engines for each instance" do
@@ -466,15 +512,22 @@ class TestEnvironment < Sprockets::TestCase
     @env.unregister_processor('application/javascript', Sprockets::DirectiveProcessor)
     assert_equal "// =require \"notfound\"\n", @env["missing_require.js"].to_s
   end
+
+  test "changing directive preprocessor changes digest" do
+    old_digest = @env.digest
+    @env.unregister_processor('application/javascript', Sprockets::DirectiveProcessor)
+    assert_not_equal old_digest, @env.digest
+  end
 end
 
-class TestEnvironmentIndex < Sprockets::TestCase
+class TestIndex < Sprockets::TestCase
   include EnvironmentTests
 
   def new_environment
     Sprockets::Environment.new(".") do |env|
       env.append_path(fixture_path('default'))
       env.static_root = fixture_path('public')
+      env.cache = {}
       yield env if block_given?
     end.index
   end

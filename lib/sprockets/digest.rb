@@ -19,7 +19,13 @@ module Sprockets
     end
 
     def digest
-      digest_class.new.update(digest_key_prefix)
+      @digest ||= compute_digest
+      @digest.dup
     end
+
+    protected
+      def compute_digest
+        digest_class.new.update(VERSION).update(digest_key_prefix.to_s)
+      end
   end
 end

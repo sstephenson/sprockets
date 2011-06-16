@@ -3,7 +3,7 @@ require 'time'
 
 module Sprockets
   # `Server` is a concern mixed into `Environment` and
-  # `EnvironmentIndex` that provides a Rack compatible `call`
+  # `Index` that provides a Rack compatible `call`
   # interface and url generation helpers.
   module Server
     # `call` implements the Rack 1.x specification which accepts an
@@ -88,7 +88,7 @@ module Sprockets
     # the string.
     def path(logical_path, fingerprint = true, prefix = nil)
       if fingerprint && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
-        url = path_with_fingerprint(logical_path, asset.digest)
+        url = attributes_for(logical_path).path_with_fingerprint(asset.digest)
       else
         url = logical_path
       end
@@ -188,7 +188,7 @@ module Sprockets
 
           # If the request url contains a fingerprint, set a long
           # expires on the response
-          if path_fingerprint(env["PATH_INFO"])
+          if attributes_for(env["PATH_INFO"]).path_fingerprint
             headers["Cache-Control"] << ", max-age=31536000"
 
           # Otherwise set `must-revalidate` since the asset could be modified.

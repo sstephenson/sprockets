@@ -1,3 +1,5 @@
+require 'sprockets/static_asset'
+
 require 'fileutils'
 require 'pathname'
 
@@ -9,11 +11,11 @@ module Sprockets
 
     def static_root=(root)
       expire_index!
-      @static_root = root
+      @static_root = root ? Pathname.new(root) : nil
     end
 
     def precompile(*paths)
-      raise "missing static root" unless @static_root
+      raise "missing static root" unless static_root
 
       paths.each do |path|
         files.each do |logical_path|
@@ -24,8 +26,9 @@ module Sprockets
           end
 
           if asset = find_asset_in_path(logical_path)
-            digest_path = path_with_fingerprint(logical_path, asset.digest)
-            filename = @static_root.join(digest_path)
+            attributes  = attributes_for(logical_path)
+            digest_path = attributes.path_with_fingerprint(asset.digest)
+            filename    = static_root.join(digest_path)
 
             FileUtils.mkdir_p filename.dirname
             asset.write_to(filename)
@@ -38,6 +41,10 @@ module Sprockets
     end
 
     protected
+      def compute_digest
+        super.update(static_root.to_s)
+      end
+
       def find_asset_in_static_root(logical_path)
         return unless static_root
 
@@ -50,7 +57,7 @@ module Sprockets
           return nil
         end
 
-        if !path_fingerprint(pathname)
+        if !attributes.path_fingerprint
           pattern = /^#{Regexp.escape(attributes.basename_without_extensions.to_s)}
                      -([0-9a-f]{7,40})
                      #{Regexp.escape(attributes.extensions.join)}$/x
@@ -72,40 +79,16 @@ module Sprockets
       end
 
     private
-      def path_fingerprint(path)
-        pathname = Pathname.new(path)
-        extensions = pathname.basename.to_s.scan(/\.[^.]+/).join
-        pathname.basename(extensions).to_s =~ /-([0-9a-f]{7,40})$/ ? $1 : nil
-      end
-
-      def path_with_fingerprint(path, digest)
-        pathname = Pathname.new(path)
-        extensions = pathname.basename.to_s.scan(/\.[^.]+/).join
-
-        if pathname.basename(extensions).to_s =~ /-([0-9a-f]{7,40})$/
-          path.sub($1, digest)
-        else
-          basename = "#{pathname.basename(extensions)}-#{digest}#{extensions}"
-          pathname.dirname.to_s == '.' ? basename : pathname.dirname.join(basename).to_s
-        end
-      end
-
       def files
         files = Set.new
         paths.each do |base_path|
           base_pathname = Pathname.new(base_path)
           Dir["#{base_pathname}/**/*"].each do |filename|
             logical_path = Pathname.new(filename).relative_path_from(base_pathname)
-            files << path_without_engine_extensions(logical_path)
+            files << attributes_for(logical_path).without_engine_extensions
           end
         end
         files
-      end
-
-      def entries(pathname)
-        @entries[pathname.to_s] ||= pathname.entries.reject { |entry| entry.to_s =~ /^\.\.?$/ }
-      rescue Errno::ENOENT
-        @entries[pathname.to_s] = []
       end
   end
 end
