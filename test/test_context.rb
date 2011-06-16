@@ -52,6 +52,11 @@ class TestCustomProcessor < Sprockets::TestCase
       @manifest['require'].each do |logical_path|
         context.require_asset(logical_path)
       end
+
+      (@manifest['ignore'] || []).each do |logical_path|
+        context.ignore_asset(logical_path)
+      end
+
       ""
     end
   end
@@ -60,6 +65,12 @@ class TestCustomProcessor < Sprockets::TestCase
     @env.register_engine :yml, YamlProcessor
 
     assert_equal "var Foo = {};\n\nvar Bar = {};\n", @env['application.js'].to_s
+  end
+
+  test "custom processor using Context#ignore" do
+    @env.register_engine :yml, YamlProcessor
+
+    assert_equal "var Foo = {};\n\n", @env['ignore.js'].to_s
   end
 
   class DataUriProcessor < Tilt::Template

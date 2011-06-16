@@ -21,6 +21,7 @@ module Sprockets
 
       @_required_paths   = []
       @_dependency_paths = Set.new
+      @_ignored_paths    = Set.new
     end
 
     def root_path
@@ -105,10 +106,19 @@ module Sprockets
     def require_asset(path)
       pathname = resolve(path, :content_type => :self)
 
-      unless @_required_paths.include?(pathname.to_s)
+      unless @_required_paths.include?(pathname.to_s) || @_ignored_paths.include?(pathname.to_s)
         @_dependency_paths << pathname.to_s
         @_required_paths << pathname.to_s
       end
+
+      pathname
+    end
+    
+    def ignore_asset(path)
+      pathname = resolve(path, :content_type => :self)
+
+      @_ignored_paths << pathname.to_s
+      @_required_paths -= [pathname.to_s]
 
       pathname
     end
