@@ -539,6 +539,11 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal "@charset \"UTF-8\";\n.foo {}\n\n.bar {}\n", asset("charset.css").to_s
   end
 
+  test "charset definition doesn't prevent header parsing" do
+    assert_equal "@charset \"UTF-8\";.one {}\n",
+      asset("charset_with_require.css").to_s
+  end
+
   test "appends missing semicolons" do
     assert_equal "var Bar\n;\n\n(function() {\n  var Foo\n})\n;\n",
       asset("semicolons.js").to_s

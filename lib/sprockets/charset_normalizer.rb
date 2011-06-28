@@ -26,7 +26,7 @@ module Sprockets
       charset = nil
 
       # Find and strip out any `@charset` definitions
-      filtered_data = data.gsub(/^@charset "([^"]+)";$/) {
+      filtered_data = data.gsub(/^@charset\s+"([^"]+)";\n?$/) {
         charset ||= $1; ""
       }
 
