@@ -90,7 +90,7 @@ module Sprockets
         # of code will not be processed.
         #
         HEADER_PATTERN = /
-          \A (
+          \A(@charset \s+ "[^"]+" ;)? (
             (?m:\s*) (
               (\/\* (?m:.*?) \*\/) |
               (\#\#\# (?m:.*?) \#\#\#) |
