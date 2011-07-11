@@ -287,6 +287,8 @@ module Sprockets
           Dir["#{root}/*"].sort.each do |filename|
             if filename == self.file
               next
+						elsif filename =~ /~$/
+							next
             elsif context.asset_requirable?(filename)
               context.require_asset(filename)
             end
@@ -310,6 +312,8 @@ module Sprockets
           Dir["#{root}/**/*"].sort.each do |filename|
             if filename == self.file
               next
+						elsif filename =~ /~$/
+							next
             elsif File.directory?(filename)
               context.depend_on(filename)
             elsif context.asset_requirable?(filename)
