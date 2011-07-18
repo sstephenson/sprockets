@@ -34,23 +34,10 @@ module Sprockets
     def search_paths
       paths = [pathname.to_s]
 
-      if format_extension && engine_extensions.empty?
-        environment.engine_formats(format_extension).each do |ext, engine|
-          paths << pathname.sub(format_extension, ext).to_s
-        end
-      end
-
       if pathname.basename(extensions.join).to_s != 'index'
         path_without_extensions = extensions.inject(pathname) { |p, ext| p.sub(ext, '') }
         index_path = path_without_extensions.join("index#{extensions.join}").to_s
-
         paths << index_path
-
-        if format_extension && engine_extensions.empty?
-          environment.engine_formats(format_extension).each do |ext, engine|
-            paths << index_path.sub(format_extension, ext).to_s
-          end
-        end
       end
 
       paths

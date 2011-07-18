@@ -7,41 +7,12 @@ class TestAssetAttributes < Sprockets::TestCase
   end
 
   test "search paths" do
-    assert_equal ["index"],
-      pathname("index").search_paths
-    assert_equal ["index.html"],
-      pathname("index.html").search_paths
-    assert_equal ["index.css", "index.less", "index.sass", "index.scss"],
-      pathname("index.css").search_paths
-    assert_equal ["index.js", "index.coffee", "index.jst"],
+    assert_equal ["index.js"],
       pathname("index.js").search_paths
-    assert_equal ["index.coffee"], pathname("index.coffee").search_paths
-    assert_equal ["index.js.coffee"], pathname("index.js.coffee").search_paths
-
-    assert_equal ["foo", "foo/index"],
-      pathname("foo").search_paths
-    assert_equal ["foo.html", "foo/index.html"],
-      pathname("foo.html").search_paths
-    assert_equal ["foo.js", "foo.coffee", "foo.jst", "foo/index.js", "foo/index.coffee", "foo/index.jst"],
+    assert_equal ["foo.js", "foo/index.js"],
       pathname("foo.js").search_paths
-    assert_equal ["foo.coffee", "foo/index.coffee"],
-      pathname("foo.coffee").search_paths
-    assert_equal ["foo.js.coffee", "foo/index.js.coffee"],
-      pathname("foo.js.coffee").search_paths
-
-    assert_equal ["foo/bar", "foo/bar/index"], pathname("foo/bar").search_paths
-    assert_equal ["foo/bar.js", "foo/bar.coffee", "foo/bar.jst", "foo/bar/index.js", "foo/bar/index.coffee", "foo/bar/index.jst"],
+    assert_equal ["foo/bar.js", "foo/bar/index.js"],
       pathname("foo/bar.js").search_paths
-    assert_equal ["foo/bar.coffee", "foo/bar/index.coffee"], pathname("foo/bar.coffee").search_paths
-    assert_equal ["foo/bar.js.coffee", "foo/bar/index.js.coffee"], pathname("foo/bar.js.coffee").search_paths
-
-    assert_equal ["jquery.foo.coffee", "jquery/index.foo.coffee"],
-      pathname("jquery.foo.coffee").search_paths
-    assert_equal ["jquery.foo.js.coffee", "jquery/index.foo.js.coffee"],
-      pathname("jquery.foo.js.coffee").search_paths
-    assert_equal ["jquery.foo.js", "jquery.foo.coffee", "jquery.foo.jst",
-                  "jquery/index.foo.js", "jquery/index.foo.coffee", "jquery/index.foo.jst"],
-      pathname("jquery.foo.js").search_paths
   end
 
   test "logical path" do

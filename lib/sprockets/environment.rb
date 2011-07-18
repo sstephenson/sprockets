@@ -33,14 +33,15 @@ module Sprockets
 
       @static_root = nil
 
-      @engines        = Sprockets.engines
-      @engine_formats = Sprockets.engine_formats
-      @trail.extensions.replace(engine_extensions)
-
-      @mime_types = {}
+      @mime_types        = {}
+      @engines           = Sprockets.engines
       @preprocessors     = Hash.new { |h, k| h[k] = [] }
       @postprocessors    = Hash.new { |h, k| h[k] = [] }
       @bundle_processors = Hash.new { |h, k| h[k] = [] }
+
+      @engines.each do |ext, klass|
+        add_engine_to_trail(ext, klass)
+      end
 
       register_mime_type 'text/css', '.css'
       register_mime_type 'application/javascript', '.js'

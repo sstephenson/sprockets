@@ -26,7 +26,6 @@ module Sprockets
       @preprocessors     = environment.preprocessors
       @postprocessors    = environment.postprocessors
       @bundle_processors = environment.bundle_processors
-      @engine_formats    = environment.engine_formats
 
       # Initialize caches
       @assets  = {}

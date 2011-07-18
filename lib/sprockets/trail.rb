@@ -29,7 +29,7 @@ module Sprockets
     # Paths at the end of the `Array` have the least priority.
     def prepend_path(path)
       expire_index!
-      @trail.paths.unshift(path)
+      @trail.prepend_path(path)
     end
 
     # Append a `path` to the `paths` list.
@@ -37,7 +37,7 @@ module Sprockets
     # Paths at the beginning of the `Array` have a higher priority.
     def append_path(path)
       expire_index!
-      @trail.paths.push(path)
+      @trail.append_path(path)
     end
 
     # Clear all paths and start fresh.
@@ -47,7 +47,7 @@ module Sprockets
     # you want.
     def clear_paths
       expire_index!
-      @trail.paths.clear
+      @trail.paths.each { |path| @trail.remove_path(path) }
     end
 
     # Returns an `Array` of extensions.

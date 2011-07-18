@@ -13,7 +13,7 @@ module Sprockets
     def register_mime_type(mime_type, ext)
       # Overrides the global behavior to expire the index
       expire_index!
-      @trail.extensions << ext
+      @trail.append_extension(ext)
       super
     end
 
@@ -30,7 +30,7 @@ module Sprockets
     def register_engine(ext, klass)
       # Overrides the global behavior to expire the index
       expire_index!
-      @trail.extensions << ext.to_s
+      add_engine_to_trail(ext, klass)
       super
     end
 
@@ -265,5 +265,16 @@ module Sprockets
         compressor.compress(data)
       end
     end
+
+    private
+      def add_engine_to_trail(ext, klass)
+        @trail.append_extension(ext)
+
+        if klass.respond_to?(:default_mime_type) && klass.default_mime_type
+          if format_ext = extension_for_mime_type(klass.default_mime_type)
+            @trail.alias_extension(ext, format_ext)
+          end
+        end
+      end
   end
 end
