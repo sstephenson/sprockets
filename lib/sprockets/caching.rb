@@ -68,7 +68,7 @@ module Sprockets
       # Removes `Environment#root` from key and prepends
       # `Environment#cache_key_namespace`.
       def cache_key_for(key)
-        File.join(cache_key_namespace, key.sub(root, ''))
+        digest.hexdigest(File.join(cache_key_namespace, key.sub(root, '')))
       end
 
       def cache_get_hash(key, version)
