@@ -82,12 +82,12 @@ module Sprockets
     end
 
     # `path` is a url helper that looks up an asset given a
-    # `logical_path` and returns a path String. By default, the
-    # asset's digest fingerprint is spliced into the filename.
+    # `logical_path` and returns a path String. If fingerprinting is enabled,
+    # the asset's digest fingerprint is spliced into the filename.
     #
     #     /assets/application-3676d55f84497cbeadfc614c1b1b62fc.js
     #
-    # A third `prefix` argument can be pass along to be prepended to
+    # A second `prefix` argument can be pass along to be prepended to
     # the string.
     def path(logical_path, prefix = nil)
       if fingerprinting_enabled? && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
