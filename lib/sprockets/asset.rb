@@ -50,6 +50,15 @@ module Sprockets
       end
     end
 
+    def path
+      if environment.fingerprinting_enabled?
+        attributes = environment.attributes_for(logical_path)
+        attributes.path_with_fingerprint(digest)
+      else
+        logical_path
+      end
+    end
+
     # Copy serialized attributes to the coder object
     def encode_with(coder)
       coder['class'] = self.class.name.sub(/Sprockets::/, '')

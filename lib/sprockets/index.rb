@@ -26,6 +26,7 @@ module Sprockets
       @preprocessors     = environment.preprocessors
       @postprocessors    = environment.postprocessors
       @bundle_processors = environment.bundle_processors
+      @fingerprinting_enabled = environment.fingerprinting_enabled?
 
       # Initialize caches
       @assets  = {}

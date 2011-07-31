@@ -170,34 +170,57 @@ module EnvironmentTests
       @env[fixture_path("default/mobile/a.js")].logical_path
   end
 
-  test "path for asset" do
-    digest = @env["gallery.js"].digest
-    assert_equal "/gallery-#{digest}.js", @env.path("gallery.js")
-    assert_equal "/gallery.js", @env.path("gallery.js", false)
-    assert_equal "/gallery-#{digest}.js", @env.path("/gallery.js")
-    assert_equal "/assets/gallery-#{digest}.js",
-      @env.path("gallery.js", true, "/assets")
+  test "path for asset with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+    assert_equal "/gallery.js", @env.path("gallery.js")
   end
 
-  test "url for asset" do
+  test "path for asset with fingerprinting enabled" do
+    digest = @env["gallery.js"].digest
+    assert_equal "/gallery-#{digest}.js", @env.path("gallery.js")
+    assert_equal "/gallery-#{digest}.js", @env.path("/gallery.js")
+    assert_equal "/assets/gallery-#{digest}.js", @env.path("gallery.js", "/assets")
+  end
+
+  test "url for asset with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+    env = Rack::MockRequest.env_for("/")
+    
+    assert_equal "http://example.org/gallery.js",
+      @env.url(env, "gallery.js")
+  end
+
+  test "url for asset with fingerprinting enabled" do
     env = Rack::MockRequest.env_for("/")
     digest = @env["gallery.js"].digest
 
     assert_equal "http://example.org/gallery-#{digest}.js",
       @env.url(env, "gallery.js")
-    assert_equal "http://example.org/gallery.js",
-      @env.url(env, "gallery.js", false)
     assert_equal "http://example.org/gallery-#{digest}.js",
       @env.url(env, "/gallery.js")
     assert_equal "http://example.org/assets/gallery-#{digest}.js",
-      @env.url(env, "gallery.js", true, "assets")
+      @env.url(env, "gallery.js", "assets")
   end
 
   test "missing path for asset" do
     assert_equal "/missing.js", @env.path("missing.js")
   end
 
-  test "precompile" do
+  test "precompile with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+
+    filename    = fixture_path("public/gallery.js")
+    filename_gz = "#{filename}.gz"
+
+    sandbox filename, filename_gz do
+      assert !File.exist?(filename)
+      @env.precompile("gallery.js")
+      assert File.exist?(filename)
+      assert File.exist?(filename_gz)
+    end
+  end
+
+  test "precompile with fingerprinting enabled" do
     digest      = @env["gallery.js"].digest
     filename    = fixture_path("public/gallery-#{digest}.js")
     filename_gz = "#{filename}.gz"
@@ -210,7 +233,24 @@ module EnvironmentTests
     end
   end
 
-  test "precompile glob" do
+  test "precompile glob with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+    dirname = fixture_path("public/mobile")
+
+    sandbox dirname do
+      assert !File.exist?(dirname)
+      @env.precompile("mobile/*")
+
+      assert File.exist?(dirname)
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c.css#{gzipped}"))
+      end
+    end
+  end
+
+  test "precompile glob with fingerprinting enabled" do
     dirname = fixture_path("public/mobile")
 
     a_digest = @env["mobile/a.js"].digest
@@ -230,7 +270,24 @@ module EnvironmentTests
     end
   end
 
-  test "precompile regexp" do
+  test "precompile regexp with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+    dirname = fixture_path("public/mobile")
+
+    sandbox dirname do
+      assert !File.exist?(dirname)
+      @env.precompile(/mobile\/.*/)
+
+      assert File.exist?(dirname)
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c.css#{gzipped}"))
+      end
+    end
+  end
+
+  test "precompile regexp with fingerprinting enabled" do
     dirname = fixture_path("public/mobile")
 
     a_digest = @env["mobile/a.js"].digest
@@ -250,7 +307,19 @@ module EnvironmentTests
     end
   end
 
-  test "precompile static asset" do
+  test "precompile static asset with fingerprinting disabled" do
+    @env.fingerprinting_enabled = false
+    filename = fixture_path("public/hello.txt")
+
+    sandbox filename do
+      assert !File.exist?(filename)
+      @env.precompile("hello.txt")
+      assert File.exist?(filename)
+      assert !File.exist?("#{filename}.gz")
+    end
+  end
+
+  test "precompile static asset with fingerprinting enabled" do
     digest   = @env["hello.txt"].digest
     filename = fixture_path("public/hello-#{digest}.txt")
 

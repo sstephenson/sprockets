@@ -89,8 +89,8 @@ module Sprockets
     #
     # A third `prefix` argument can be pass along to be prepended to
     # the string.
-    def path(logical_path, fingerprint = true, prefix = nil)
-      if fingerprint && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
+    def path(logical_path, prefix = nil)
+      if fingerprinting_enabled? && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
         url = attributes_for(logical_path).path_with_fingerprint(asset.digest)
       else
         url = logical_path
@@ -104,7 +104,7 @@ module Sprockets
 
     # Similar to `path`, `url` returns a full url given a Rack `env`
     # Hash and a `logical_path`.
-    def url(env, logical_path, fingerprint = true, prefix = nil)
+    def url(env, logical_path, prefix = nil)
       req = Rack::Request.new(env)
 
       url = req.scheme + "://"
@@ -115,7 +115,7 @@ module Sprockets
         url << ":#{req.port}"
       end
 
-      url << path(logical_path, fingerprint, prefix)
+      url << path(logical_path, prefix)
 
       url
     end
