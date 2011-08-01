@@ -175,6 +175,11 @@ module EnvironmentTests
     assert_equal "/gallery.js", @env.path("gallery.js")
   end
 
+  test "path for asset with fingerprinting exclusion" do
+    @env.fingerprinting_exclusions = ["gallery.js"]
+    assert_equal "/gallery.js", @env.path("gallery.js")
+  end
+
   test "path for asset with fingerprinting enabled" do
     digest = @env["gallery.js"].digest
     assert_equal "/gallery-#{digest}.js", @env.path("gallery.js")
@@ -184,6 +189,14 @@ module EnvironmentTests
 
   test "url for asset with fingerprinting disabled" do
     @env.fingerprinting_enabled = false
+    env = Rack::MockRequest.env_for("/")
+    
+    assert_equal "http://example.org/gallery.js",
+      @env.url(env, "gallery.js")
+  end
+
+  test "url for asset with fingerprinting exlusions" do
+    @env.fingerprinting_exclusions = ["gallery.js"]
     env = Rack::MockRequest.env_for("/")
     
     assert_equal "http://example.org/gallery.js",
@@ -220,6 +233,20 @@ module EnvironmentTests
     end
   end
 
+  test "precompile with fingerprinting exclusion" do
+    @env.fingerprinting_exclusions = ["gallery.js"]
+
+    filename    = fixture_path("public/gallery.js")
+    filename_gz = "#{filename}.gz"
+
+    sandbox filename, filename_gz do
+      assert !File.exist?(filename)
+      @env.precompile("gallery.js")
+      assert File.exist?(filename)
+      assert File.exist?(filename_gz)
+    end
+  end
+
   test "precompile with fingerprinting enabled" do
     digest      = @env["gallery.js"].digest
     filename    = fixture_path("public/gallery-#{digest}.js")
@@ -235,6 +262,23 @@ module EnvironmentTests
 
   test "precompile glob with fingerprinting disabled" do
     @env.fingerprinting_enabled = false
+    dirname = fixture_path("public/mobile")
+
+    sandbox dirname do
+      assert !File.exist?(dirname)
+      @env.precompile("mobile/*")
+
+      assert File.exist?(dirname)
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c.css#{gzipped}"))
+      end
+    end
+  end
+
+  test "precompile glob with fingerprinting exclusion" do
+    @env.fingerprinting_exclusions = ["mobile/*"]
     dirname = fixture_path("public/mobile")
 
     sandbox dirname do
@@ -287,6 +331,23 @@ module EnvironmentTests
     end
   end
 
+  test "precompile regexp with fingerprinting exclusion" do
+    @env.fingerprinting_exclusions = [/mobile\/.*/]
+    dirname = fixture_path("public/mobile")
+
+    sandbox dirname do
+      assert !File.exist?(dirname)
+      @env.precompile(/mobile\/.*/)
+
+      assert File.exist?(dirname)
+      [nil, '.gz'].each do |gzipped|
+        assert File.exist?(File.join(dirname, "a.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "b.js#{gzipped}"))
+        assert File.exist?(File.join(dirname, "c.css#{gzipped}"))
+      end
+    end
+  end
+
   test "precompile regexp with fingerprinting enabled" do
     dirname = fixture_path("public/mobile")
 
@@ -309,6 +370,18 @@ module EnvironmentTests
 
   test "precompile static asset with fingerprinting disabled" do
     @env.fingerprinting_enabled = false
+    filename = fixture_path("public/hello.txt")
+
+    sandbox filename do
+      assert !File.exist?(filename)
+      @env.precompile("hello.txt")
+      assert File.exist?(filename)
+      assert !File.exist?("#{filename}.gz")
+    end
+  end
+
+  test "precompile static asset with fingerprinting exclusion" do
+    @env.fingerprinting_exclusions = ["hello.txt"]
     filename = fixture_path("public/hello.txt")
 
     sandbox filename do

@@ -50,10 +50,12 @@ module Sprockets
       end
     end
 
+    # Returns the logical path of the asset, appending the fingerprint if
+    # fingerprinting is enabled in the environment and the asset is not
+    # excluded from asset path fingerprinting.
     def path
-      if environment.fingerprinting_enabled?
-        attributes = environment.attributes_for(logical_path)
-        attributes.path_with_fingerprint(digest)
+      if environment.fingerprint_path?(logical_path)
+        environment.attributes_for(logical_path).path_with_fingerprint(digest)
       else
         logical_path
       end

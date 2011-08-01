@@ -90,7 +90,7 @@ module Sprockets
     # A second `prefix` argument can be pass along to be prepended to
     # the string.
     def path(logical_path, prefix = nil)
-      if fingerprinting_enabled? && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
+      if fingerprint_path?(logical_path) && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
         url = attributes_for(logical_path).path_with_fingerprint(asset.digest)
       else
         url = logical_path
