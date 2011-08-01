@@ -26,6 +26,9 @@ module Sprockets
       # Create a safe `Context` subclass to mutate
       @context_class = Class.new(Context)
 
+      # Enable fingerprinting by default
+      @fingerprinting_enabled = true
+
       # Set MD5 as the default digest
       require 'digest/md5'
       @digest_class = ::Digest::MD5

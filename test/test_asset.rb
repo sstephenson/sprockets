@@ -14,6 +14,10 @@ module AssetTests
     assert_equal @asset, @env[@asset.logical_path]
   end
 
+  test "path" do
+    assert @asset.path
+  end
+
   test "mtime" do
     assert @asset.mtime
   end

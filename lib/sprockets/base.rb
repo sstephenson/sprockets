@@ -2,6 +2,7 @@ require 'sprockets/asset_attributes'
 require 'sprockets/bundled_asset'
 require 'sprockets/caching'
 require 'sprockets/digest'
+require 'sprockets/fingerprinting'
 require 'sprockets/processing'
 require 'sprockets/server'
 require 'sprockets/static_asset'
@@ -13,7 +14,7 @@ module Sprockets
   # `Base` class for `Environment` and `Index`.
   class Base
     include Digest
-    include Caching, Processing, Server, StaticCompilation, Trail
+    include Fingerprinting, Caching, Processing, Server, StaticCompilation, Trail
 
     # Get and set `Logger` instance.
     attr_accessor :logger
