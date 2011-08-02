@@ -72,7 +72,7 @@ module Sprockets
 
         # If its a file, digest the contents
         elsif stat.file?
-          digest.file(path)
+          digest.file(path.to_s)
 
         # If its a directive, digest the list of filenames
         elsif stat.directory?
