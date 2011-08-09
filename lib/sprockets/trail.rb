@@ -49,6 +49,15 @@ module Sprockets
       expire_index!
       @trail.paths.each { |path| @trail.remove_path(path) }
     end
+    
+    # Clears a matching 'path' from the 'paths' list
+    # 
+    # Useful when implementing dynamic themes i.e., theme per action
+    # or theme per controller or there per user etc
+    def clear_matching_path(path)
+      expire_index!
+      @trail.paths.each { |trail_path| @trail.remove_path(trail_path) if trail_path.match(path) }
+    end
 
     # Returns an `Array` of extensions.
     #
