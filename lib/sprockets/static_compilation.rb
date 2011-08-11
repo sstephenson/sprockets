@@ -31,6 +31,7 @@ module Sprockets
     def precompile(*paths)
       raise "missing static root" unless static_root
 
+      manifest = {}
       paths.each do |path|
         files.each do |logical_path|
           if path.is_a?(Regexp)
@@ -46,6 +47,8 @@ module Sprockets
             digest_path = attributes.path_with_fingerprint(asset.digest)
             filename    = static_root.join(digest_path)
 
+            manifest[logical_path] = digest_path
+
             # Ensure directory exists
             FileUtils.mkdir_p filename.dirname
 
@@ -57,6 +60,7 @@ module Sprockets
           end
         end
       end
+      manifest
     end
 
     private
