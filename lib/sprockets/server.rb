@@ -144,6 +144,7 @@ module Sprockets
       # Returns a JavaScript response that re-throws a Ruby exception
       # in the browser
       def javascript_exception_response(exception)
+        expire_index!
         err  = "#{exception.class.name}: #{exception.message}"
         body = "throw Error(#{err.inspect})"
         [ 200, { "Content-Type" => "application/javascript", "Content-Length" => Rack::Utils.bytesize(body).to_s }, [ body ] ]
@@ -152,6 +153,7 @@ module Sprockets
       # Returns a CSS response that hides all elements on the page and
       # displays the exception
       def css_exception_response(exception)
+        expire_index!
         message   = "\n#{exception.class.name}: #{exception.message}"
         backtrace = "\n  #{exception.backtrace.first}"
 
