@@ -115,7 +115,7 @@ module Sprockets
       return to_enum(__method__) unless block_given?
       paths.each do |base_path|
         Dir["#{base_path}/**/*"].each do |filename|
-          yield filename
+          yield filename unless File.directory?(filename)
         end
       end
       nil
