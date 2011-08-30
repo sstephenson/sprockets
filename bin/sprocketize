@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+
+
+require "optparse"
+require File.join(File.dirname(__FILE__), *%w".. lib sprockets")
+
+
+environment = Sprockets::Environment.new
+filenames = []
+output_directory = "."
+
+OptionParser.new do |opts|
+
+  opts.banner = "Usage: sprocketize [options] filename [filename ...]"
+
+  def opts.show_usage
+    puts self
+    exit 1
+  end
+
+  opts.on("-I DIRECTORY",
+          "--include-dir=DIRECTORY",
+          "Add the directory to the load path") do |dir|
+    environment.append_path(dir)
+  end
+
+  opts.on("-o DIRECTORY",
+          "--output-dir=DIRECTOR",
+          "The output directory") do |dir|
+    output_directory = dir
+  end
+
+  opts.on_tail("-h", "--help", "Shows this help message") do
+    opts.show_usage
+  end
+  
+  opts.on_tail("-v", "--version", "Shows version") do
+    puts Sprockets::VERSION
+    exit
+  end
+
+  opts.show_usage if ARGV.empty?
+  
+  begin
+    opts.order(ARGV) do |filename|
+      filenames << filename
+    end
+  rescue OptionParser::ParseError => e
+    opts.warn e.message
+    opts.show_usage
+  end
+end
+
+
+filenames.each do |filename|
+  output_path = File.join(output_directory, filename)
+  File.open(output_path, 'w') do |f|
+    f.write environment[filename]
+  end
+end
+
