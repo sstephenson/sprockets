@@ -171,13 +171,13 @@ module EnvironmentTests
     @env.each_file do |filename|
       files << filename
     end
-    assert_equal 21, files.length
+    assert_equal 26, files.length
   end
 
   test "each file enumerator" do
     files = []
     enum = @env.each_file
-    assert_equal 21, enum.to_a.length
+    assert_equal 26, enum.to_a.length
   end
 
   test "iterate over each logical path" do
@@ -185,7 +185,7 @@ module EnvironmentTests
     @env.each_logical_path do |logical_path|
       paths << logical_path
     end
-    assert_equal 21, paths.length
+    assert_equal 26, paths.length
     assert_equal paths.size, paths.uniq.size, "has duplicates"
 
     assert paths.include?("application.js")
@@ -197,7 +197,7 @@ module EnvironmentTests
   test "each logical path enumerator" do
     files = []
     enum = @env.each_logical_path
-    assert_equal 21, enum.to_a.length
+    assert_equal 26, enum.to_a.length
   end
 
   test "CoffeeScript files are compiled in a closure" do
@@ -489,4 +489,5 @@ class TestIndex < Sprockets::TestCase
     assert env.engines[".foo"]
     assert_nil index.engines[".foo"]
   end
+
 end
