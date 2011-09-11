@@ -7,6 +7,7 @@ require 'sprockets/server'
 require 'sprockets/static_asset'
 require 'sprockets/trail'
 require 'pathname'
+require 'uri'
 
 module Sprockets
   # `Base` class for `Environment` and `Index`.
@@ -93,7 +94,7 @@ module Sprockets
 
     # Find asset by logical path or expanded path.
     def find_asset(path, options = {})
-      pathname = Pathname.new(path)
+      pathname = Pathname.new(uri_parser.unescape(path))
 
       if pathname.absolute?
         build_asset(attributes_for(pathname).logical_path, pathname, options)
@@ -159,5 +160,11 @@ module Sprockets
           StaticAsset.new(self, logical_path, pathname)
         end
       end
+
+    private
+      def uri_parser
+        @uri_parser ||= URI.const_defined?(:Parser) ? URI::Parser.new : URI
+      end
+
   end
 end
