@@ -126,7 +126,7 @@ module Sprockets
     protected
       # Return new blank `Context` to evaluate processors in.
       def blank_context
-        environment.context_class.new(environment, logical_path.to_s, pathname)
+        environment.context_class.new(environment.index, logical_path.to_s, pathname)
       end
 
       # Get `Context` after processors have been ran on it. This

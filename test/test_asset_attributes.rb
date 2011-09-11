@@ -16,7 +16,9 @@ class TestAssetAttributes < Sprockets::TestCase
   end
 
   test "logical path" do
-    assert_equal nil, pathname(fixture_path("missing/application.js")).logical_path
+    assert_raise Sprockets::Error do
+      pathname(fixture_path("missing/application.js")).logical_path
+    end
 
     assert_equal "application.js", pathname(fixture_path("default/application.js")).logical_path
     assert_equal "application.css", pathname(fixture_path("default/application.css")).logical_path
@@ -112,6 +114,8 @@ class TestAssetAttributes < Sprockets::TestCase
       pathname("foo.js").path_with_fingerprint("0aa2105d29558f3eb790d411d7d8fb66")
     assert_equal "foo-0aa2105d29558f3eb790d411d7d8fb66.js",
       pathname("foo-37b51d194a7513e45b56f6524f2d51f2.js").path_with_fingerprint("0aa2105d29558f3eb790d411d7d8fb66")
+    assert_equal "jquery-1.5.1-0aa2105d29558f3eb790d411d7d8fb66.js",
+      pathname("jquery-1.5.1.js").path_with_fingerprint("0aa2105d29558f3eb790d411d7d8fb66")
   end
 
   private

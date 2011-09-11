@@ -1,4 +1,3 @@
-require 'rack/request'
 require 'time'
 
 module Sprockets
@@ -79,47 +78,6 @@ module Sprockets
       else
         raise
       end
-    end
-
-    # Deprecated: `path` is a url helper that looks up an asset given a
-    # `logical_path` and returns a path String. By default, the
-    # asset's digest fingerprint is spliced into the filename.
-    #
-    #     /assets/application-3676d55f84497cbeadfc614c1b1b62fc.js
-    #
-    # A third `prefix` argument can be pass along to be prepended to
-    # the string.
-    def path(logical_path, fingerprint = true, prefix = nil)
-      logger.warn "Sprockets::Environment#path is deprecated\n#{caller[0..2].join("\n")}"
-      if fingerprint && asset = find_asset(logical_path.to_s.sub(/^\//, ''))
-        url = asset.digest_path
-      else
-        url = logical_path
-      end
-
-      url = File.join(prefix, url) if prefix
-      url = "/#{url}" unless url =~ /^\//
-
-      url
-    end
-
-    # Deprecated: Similar to `path`, `url` returns a full url given a Rack `env`
-    # Hash and a `logical_path`.
-    def url(env, logical_path, fingerprint = true, prefix = nil)
-      logger.warn "Sprockets::Environment#url is deprecated\n#{caller[0..2].join("\n")}"
-      req = Rack::Request.new(env)
-
-      url = req.scheme + "://"
-      url << req.host
-
-      if req.scheme == "https" && req.port != 443 ||
-          req.scheme == "http" && req.port != 80
-        url << ":#{req.port}"
-      end
-
-      url << path(logical_path, fingerprint, prefix)
-
-      url
     end
 
     private

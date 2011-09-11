@@ -49,6 +49,8 @@ module Sprockets
         path = engine_extensions.inject(path) { |p, ext| p.sub(ext, '') }
         path = "#{path}#{engine_format_extension}" unless format_extension
         path
+      else
+        raise Error, "#{pathname} isn't in paths: #{environment.paths.join(', ')}"
       end
     end
 
@@ -130,8 +132,7 @@ module Sprockets
       if old_digest = path_fingerprint
         pathname.sub(old_digest, digest).to_s
       else
-        basename = "#{pathname.basename(extensions.join)}-#{digest}#{extensions.join}"
-        pathname.dirname.to_s == '.' ? basename : pathname.dirname.join(basename).to_s
+        pathname.to_s.sub(/\.(\w+)$/) { |ext| "-#{digest}#{ext}" }
       end
     end
 
