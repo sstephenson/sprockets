@@ -62,4 +62,9 @@ class EncodingTest < Sprockets::TestCase
         @env['ascii_utf8.js'].to_s
     end
   end
+
+  test "read UTF-8 & URL encoded filename asset" do
+    assert_equal @env['日本語.js'].to_s, @env['%E6%97%A5%E6%9C%AC%E8%AA%9E.js'].to_s
+  end
+
 end
