@@ -115,6 +115,11 @@ module Sprockets
       paths.each do |base_path|
         Dir["#{base_path}/**/*"].each do |filename|
           yield filename unless File.directory?(filename)
+          if File.symlink?(filename) && File.directory?(filename)
+            Dir["#{filename}/**/*"].each do |inner_filename|
+              yield inner_filename unless File.directory?(inner_filename)
+            end
+          end
         end
       end
       nil
