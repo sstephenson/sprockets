@@ -5,8 +5,8 @@ require "fileutils"
 
 if defined? Encoding
   old_verbose, $VERBOSE = $VERBOSE, false
-  Encoding.default_external = 'utf-8'
-  Encoding.default_internal = 'utf-8'
+  Encoding.default_external = 'UTF-8'
+  Encoding.default_internal = 'UTF-8'
   $VERBOSE = old_verbose
 end
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require "sprockets_test"
 
 require 'rack/builder'
@@ -191,6 +192,11 @@ class TestServer < Sprockets::TestCase
     assert_match %r{content: ".*?Sprockets::FileNotFound}, last_response.body
   end
 
+  test "serve encoded utf-8 pathname" do
+    get "/assets/%E6%97%A5%E6%9C%AC%E8%AA%9E.js"
+    assert_equal "var japanese = \"日本語\";\n", last_response.body
+  end
+
   test "illegal require outside load path" do
     get "/assets/../config/passwd"
     assert_equal 403, last_response.status
@@ -201,8 +207,7 @@ class TestServer < Sprockets::TestCase
 
     sandbox filename do
       get "/assets/tree.js"
-      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\n",
-        last_response.body
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar japanese = \"日本語\";\n", last_response.body
 
       File.open(filename, "w") do |f|
         f.puts "var baz;"
@@ -213,8 +218,7 @@ class TestServer < Sprockets::TestCase
       File.utime(mtime, mtime, path)
 
       get "/assets/tree.js"
-      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\n",
-        last_response.body
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\nvar japanese = \"日本語\";\n", last_response.body
     end
   end
 

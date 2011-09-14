@@ -1,4 +1,5 @@
 require 'time'
+require 'uri'
 
 module Sprockets
   # `Server` is a concern mixed into `Environment` and
@@ -35,7 +36,7 @@ module Sprockets
       env['rack.session.options'][:skip] = true
 
       # Extract the path from everything after the leading slash
-      path = env['PATH_INFO'].to_s.sub(/^\//, '')
+      path = unescape(env['PATH_INFO'].to_s.sub(/^\//, ''))
 
       # Look up the asset.
       asset = find_asset(path)
@@ -219,6 +220,20 @@ module Sprockets
           else
             headers["Cache-Control"] << ", must-revalidate"
           end
+        end
+      end
+
+      # URI.unescape is deprecated on 1.9. We need to use URI::Parser
+      # if its available.
+      if defined? URI::DEFAULT_PARSER
+        def unescape(str)
+          str = URI::DEFAULT_PARSER.unescape(str)
+          str.force_encoding(Encoding.default_internal) if Encoding.default_internal
+          str
+        end
+      else
+        def unescape(str)
+          URI.unescape(str)
         end
       end
 
