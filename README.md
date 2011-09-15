@@ -110,6 +110,10 @@ way to do this is with the `map` method in `config.ru`:
       environment.append_path 'app/assets/stylesheets'
       run environment
     end
+    
+    map '/' do
+      run YourRackApp
+    end
 
 ### Accessing Assets Programmatically ###
 
