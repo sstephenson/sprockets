@@ -718,6 +718,29 @@ class BundledAssetTest < Sprockets::TestCase
       ENV["HOME"] = home
     end
   end
+  
+  test "Sass asset with imports" do
+    assert read("imports/imported.scss"), asset("imports/import.css").to_s
+  end
+
+  test "Sass asset is stale when one of its imports is modified" do
+    main = fixture_path('asset/imports/import.css.scss')
+    dep  = fixture_path('asset/imports/imported.scss')
+  
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write %{@import "imports/imported";\n} }
+      File.open(dep, 'w') { |f| f.write "body { color: red; }" }
+      asset = @env['imports/import.css']
+  
+      assert asset.fresh?
+  
+      File.open(dep, 'w') { |f| f.write "body { color: blue; }" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dep)
+  
+      assert asset.stale?
+    end
+  end
 
   def asset(logical_path)
     @env[logical_path]

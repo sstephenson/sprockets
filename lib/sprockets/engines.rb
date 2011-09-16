@@ -89,8 +89,8 @@ module Sprockets
 
   # CSS engines
   register_engine '.less',   Tilt::LessTemplate
-  register_engine '.sass',   Tilt::SassTemplate
-  register_engine '.scss',   Tilt::ScssTemplate
+  register_engine '.sass',   SassTemplate
+  register_engine '.scss',   ScssTemplate
 
   # Other
   register_engine '.erb',    Tilt::ERBTemplate

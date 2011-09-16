@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "eco", "~> 1.0"
   s.add_development_dependency "ejs", "~> 1.0"
   s.add_development_dependency "execjs", "~> 1.0"
+  s.add_development_dependency "sass", "~> 3.1"
   s.add_development_dependency "json"
   s.add_development_dependency "rack-test"
   s.add_development_dependency "rake"
