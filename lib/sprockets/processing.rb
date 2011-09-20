@@ -60,7 +60,7 @@ module Sprockets
     # argument is supplied, the processors registered under that
     # extension will be returned.
     #
-    # Postprocessors are ran after Postprocessors and Engine processors.
+    # Postprocessors are ran after Preprocessors and Engine processors.
     #
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
