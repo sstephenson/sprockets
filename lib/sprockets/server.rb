@@ -39,29 +39,31 @@ module Sprockets
       path = unescape(env['PATH_INFO'].to_s.sub(/^\//, ''))
 
       # Look up the asset.
-      asset = find_asset(path)
-      asset.to_a if asset
+      with_index do
+        asset = find_asset(path)
+        asset.to_a if asset
 
-      # `find_asset` returns nil if the asset doesn't exist
-      if asset.nil?
-        logger.info "#{msg} 404 Not Found (#{time_elapsed.call}ms)"
+        # `find_asset` returns nil if the asset doesn't exist
+        if asset.nil?
+          logger.info "#{msg} 404 Not Found (#{time_elapsed.call}ms)"
 
-        # Return a 404 Not Found
-        not_found_response
+          # Return a 404 Not Found
+          not_found_response
 
-      # Check request headers `HTTP_IF_MODIFIED_SINCE` and
-      # `HTTP_IF_NONE_MATCH` against the assets mtime and digest
-      elsif not_modified?(asset, env) || etag_match?(asset, env)
-        logger.info "#{msg} 304 Not Modified (#{time_elapsed.call}ms)"
+          # Check request headers `HTTP_IF_MODIFIED_SINCE` and
+          # `HTTP_IF_NONE_MATCH` against the assets mtime and digest
+        elsif not_modified?(asset, env) || etag_match?(asset, env)
+          logger.info "#{msg} 304 Not Modified (#{time_elapsed.call}ms)"
 
-        # Return a 304 Not Modified
-        not_modified_response(asset, env)
+          # Return a 304 Not Modified
+          not_modified_response(asset, env)
 
-      else
-        logger.info "#{msg} 200 OK (#{time_elapsed.call}ms)"
+        else
+          logger.info "#{msg} 200 OK (#{time_elapsed.call}ms)"
 
-        # Return a 200 with the asset contents
-        ok_response(asset, env)
+          # Return a 200 with the asset contents
+          ok_response(asset, env)
+        end
       end
     rescue Exception => e
       logger.error "Error compiling asset #{path}:"

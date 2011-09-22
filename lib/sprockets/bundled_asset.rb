@@ -157,102 +157,108 @@ module Sprockets
       end
 
       def build_dependency_context_and_body
-        start_time = Time.now.to_f
+        environment.with_index do
+          start_time = Time.now.to_f
 
-        context = blank_context
+          context = blank_context
 
-        # Read original data once and pass it along to `Context`
-        data = Sprockets::Utils.read_unicode(pathname)
+          # Read original data once and pass it along to `Context`
+          data = Sprockets::Utils.read_unicode(pathname)
 
-        # Prime digest cache with data, since we happen to have it
-        environment.file_digest(pathname, data)
+          # Prime digest cache with data, since we happen to have it
+          environment.index.file_digest(pathname, data)
 
-        # Runs all processors on `Context`
-        body = context.evaluate(pathname, :data => data)
+          # Runs all processors on `Context`
+          body = context.evaluate(pathname, :data => data)
 
-        @dependency_context, @body = context, body
+          @dependency_context, @body = context, body
 
-        elapsed_time = ((Time.now.to_f - start_time) * 1000).to_i
-        logger.info "Compiled #{logical_path}  (#{elapsed_time}ms)  (pid #{Process.pid})"
+          elapsed_time = ((Time.now.to_f - start_time) * 1000).to_i
+          logger.info "Compiled #{logical_path}  (#{elapsed_time}ms)  (pid #{Process.pid})"
 
-        return context, body
+          return context, body
+        end
       end
 
       def build_dependencies_paths_and_assets
-        check_circular_dependency!
+        environment.with_index do
+          check_circular_dependency!
 
-        paths, assets = {}, []
+          paths, assets = {}, []
 
-        # Define an `add_dependency` helper
-        add_dependency = lambda do |asset|
-          unless assets.any? { |a| a.pathname == asset.pathname }
-            assets << asset
+          # Define an `add_dependency` helper
+          add_dependency = lambda do |asset|
+            unless assets.any? { |a| a.pathname == asset.pathname }
+              assets << asset
+            end
           end
-        end
 
-        # Iterate over all the declared require paths from the `Context`
-        dependency_context._required_paths.each do |required_path|
-          # Catch `require_self`
-          if required_path == pathname.to_s
-            add_dependency.call(self)
-          else
+          # Iterate over all the declared require paths from the `Context`
+          dependency_context._required_paths.each do |required_path|
+            # Catch `require_self`
+            if required_path == pathname.to_s
+              add_dependency.call(self)
+            else
+              # Recursively lookup required asset
+              environment[required_path, @options].to_a.each do |asset|
+                add_dependency.call(asset)
+              end
+            end
+          end
+
+          # Ensure self is added to the dependency list
+          add_dependency.call(self)
+
+          dependency_context._dependency_paths.each do |path|
+            paths[path] ||= {
+              'path'      => path,
+              'mtime'     => environment.index.stat(path).mtime,
+              'hexdigest' => environment.index.file_digest(path).hexdigest
+            }
+          end
+
+          dependency_context._dependency_assets.each do |path|
+            # Skip if depending on self
+            next if path == pathname.to_s
+
             # Recursively lookup required asset
-            environment[required_path, @options].to_a.each do |asset|
-              add_dependency.call(asset)
+            environment[path, @options].to_a.each do |asset|
+              asset.dependency_paths.each do |dep|
+                paths[dep['path']] ||= dep
+              end
             end
           end
+
+          @dependency_paths, @assets = paths.values, assets
+
+          return @dependency_paths, @assets
         end
-
-        # Ensure self is added to the dependency list
-        add_dependency.call(self)
-
-        dependency_context._dependency_paths.each do |path|
-          paths[path] ||= {
-            'path'      => path,
-            'mtime'     => environment.stat(path).mtime,
-            'hexdigest' => environment.file_digest(path).hexdigest
-          }
-        end
-
-        dependency_context._dependency_assets.each do |path|
-          # Skip if depending on self
-          next if path == pathname.to_s
-
-          # Recursively lookup required asset
-          environment[path, @options].to_a.each do |asset|
-            asset.dependency_paths.each do |dep|
-              paths[dep['path']] ||= dep
-            end
-          end
-        end
-
-        @dependency_paths, @assets = paths.values, assets
-
-        return @dependency_paths, @assets
       end
 
       def build_source
-        hash = environment.cache_hash("#{pathname}:source", id) do
-          data = ""
+        environment.with_index do
+          hash = environment.cache_hash("#{pathname}:source", id) do
+            data = ""
 
-          # Explode Asset into parts and gather the dependency bodies
-          to_a.each { |dependency| data << dependency.body }
+            # Explode Asset into parts and gather the dependency bodies
+            to_a.each { |dependency| data << dependency.body }
 
-          # Run bundle processors on concatenated source
-          data = blank_context.evaluate(pathname, :data => data,
-            :processors => environment.bundle_processors(content_type))
+            # Run bundle processors on concatenated source
+            data = blank_context.evaluate(pathname, :data => data,
+              :processors => environment.bundle_processors(content_type))
 
-          { 'length' => Rack::Utils.bytesize(data),
-            'digest' => environment.digest.update(data).hexdigest,
-            'source' => data }
+            { 'length' => Rack::Utils.bytesize(data),
+              'digest' => environment.digest.update(data).hexdigest,
+              'source' => data }
+          end
+          hash['length'] = Integer(hash['length']) if hash['length'].is_a?(String)
+
+          @length = hash['length']
+          @digest = hash['digest']
+          @source = hash['source']
+
+          hash
         end
-        hash['length'] = Integer(hash['length']) if hash['length'].is_a?(String)
-
-        @length = hash['length']
-        @digest = hash['digest']
-        @source = hash['source']
-
-        hash
       end
   end
 end

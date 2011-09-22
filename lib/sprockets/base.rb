@@ -46,6 +46,14 @@ module Sprockets
       raise NotImplementedError
     end
 
+    # Optimization hint that the same index can be used for the scope
+    # of the block.
+    #
+    # See `Environment#with_index`.
+    def with_index
+      yield
+    end
+
     # Works like `Dir.entries`.
     #
     # Subclasses may cache this method.
@@ -96,9 +104,9 @@ module Sprockets
       pathname = Pathname.new(path)
 
       if pathname.absolute?
-        build_asset(attributes_for(pathname).logical_path, pathname, options)
+        index.build_asset(attributes_for(pathname).logical_path, pathname, options)
       else
-        find_asset_in_path(pathname, options)
+        index.find_asset_in_path(pathname, options)
       end
     end
 

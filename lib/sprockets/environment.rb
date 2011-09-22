@@ -61,17 +61,44 @@ module Sprockets
     # faster. This behavior is ideal in production since the file
     # system only changes between deploys.
     def index
-      Index.new(self)
+      Thread.current[:sprockets_index] || Index.new(self)
+    end
+
+    # Optimization hint that the same index can be used for the scope
+    # of the block.
+    #
+    # Examples
+    #
+    #   # Ensure both lookups use the same cache
+    #   environment.with_index do
+    #     environment["application.js"]
+    #     environment["application.css"]
+    #   end
+    #
+    # Is roughly the same as
+    #
+    #   index = environment.index
+    #   index["application.js"]
+    #   index["application.css"]
+    #
+    def with_index
+      reset = !Thread.current[:sprockets_index]
+      Thread.current[:sprockets_index] ||= index
+      yield
+    ensure
+      Thread.current[:sprockets_index] = nil if reset
     end
 
     # Cache `find_asset` calls
     def find_asset(path, options = {})
-      # Ensure inmemory cached assets are still fresh on every lookup
-      if (asset = @assets[path.to_s]) && asset.fresh?
-        asset
-      elsif asset = super
-        @assets[path.to_s] = @assets[asset.pathname.to_s] = asset
-        asset
+      with_index do
+        # Ensure inmemory cached assets are still fresh on every lookup
+        if (asset = @assets[path.to_s]) && asset.fresh?
+          asset
+        elsif asset = super
+          @assets[path.to_s] = @assets[asset.pathname.to_s] = asset
+          asset
+        end
       end
     end
 
