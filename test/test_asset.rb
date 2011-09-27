@@ -325,6 +325,15 @@ class BundledAssetTest < Sprockets::TestCase
     )
   end
 
+  #
+  # good.js requires with_bad_file directory using "require_tree .".
+  # That directory has a bad.js.orig file. orig is a pre-processor that doesn't exist
+  # There should be a way of ignoring files that can't be processed
+  #
+  test "require_tree with bad file pre-processor extension" do
+      assert_nil asset("tree/with_bad_file/good.js").to_s[/badfile/]
+  end
+
   test "require_tree without an argument defaults to the current directory" do
     assert_equal(
       "a();\nb();\n",
