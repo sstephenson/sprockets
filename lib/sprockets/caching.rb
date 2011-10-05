@@ -51,7 +51,7 @@ module Sprockets
           hash = {}
           asset.encode_with(hash)
 
-          # Save the asset to at its path
+          # Save the asset to its path
           cache_set_hash(path.to_s, digest.hexdigest, hash)
 
           # Since path maybe a logical or full pathname, save the
