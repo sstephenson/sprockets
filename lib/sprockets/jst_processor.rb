@@ -2,6 +2,12 @@ require 'tilt'
 
 module Sprockets
   class JstProcessor < Tilt::Template
+
+    @namespace = 'this.JST'
+    class << self
+      attr_accessor :namespace
+    end
+
     def self.default_mime_type
       'application/javascript'
     end
@@ -12,8 +18,8 @@ module Sprockets
     def evaluate(scope, locals, &block)
       <<-JST
 (function() {
-  this.JST || (this.JST = {});
-  this.JST[#{scope.logical_path.inspect}] = #{indent(data)};
+  #{self.class.namespace} || (#{self.class.namespace} = {});
+  #{self.class.namespace}[#{scope.logical_path.inspect}] = #{indent(data)};
 }).call(this);
       JST
     end
