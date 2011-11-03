@@ -8,6 +8,12 @@ class TestContext < Sprockets::TestCase
     @env.append_path(fixture_path('context'))
   end
 
+  test "context environment is indexed" do
+    instances = @env["environment.js"].to_s.split("\n")
+    assert_match "Sprockets::Index", instances[0]
+    assert_equal instances[0], instances[1]
+  end
+
   test "source file properties are exposed in context" do
     json = @env["properties.js"].to_s.chomp.chop
     assert_equal({

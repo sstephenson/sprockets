@@ -71,28 +71,4 @@ module Sprockets
         hash.inject(initial) { |h, (k, a)| h[k] = a.dup; h }
       end
   end
-
-  # Extend Sprockets module to provide global registry
-  extend Engines
-  @engines = {}
-
-  # Cherry pick the default Tilt engines that make sense for
-  # Sprockets. We don't need ones that only generate html like HAML.
-
-  # Mmm, CoffeeScript
-  register_engine '.coffee', Tilt::CoffeeScriptTemplate
-
-  # JST engines
-  register_engine '.jst',    JstProcessor
-  register_engine '.eco',    EcoTemplate
-  register_engine '.ejs',    EjsTemplate
-
-  # CSS engines
-  register_engine '.less',   Tilt::LessTemplate
-  register_engine '.sass',   Tilt::SassTemplate
-  register_engine '.scss',   Tilt::ScssTemplate
-
-  # Other
-  register_engine '.erb',    Tilt::ERBTemplate
-  register_engine '.str',    Tilt::StringTemplate
 end

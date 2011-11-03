@@ -7,38 +7,15 @@ module Sprockets
   # any processing or concatenation. These are typical images and
   # other binary files.
   class StaticAsset < Asset
-    # Define extra attributes to be serialized.
-    def self.serialized_attributes
-      super + %w( content_type mtime length digest )
-    end
-
-    def initialize(environment, logical_path, pathname, digest = nil)
-      super(environment, logical_path, pathname)
-      @digest = digest
-      load!
-    end
-
-    # Returns file contents as its `body`.
-    def body
+    # Returns file contents as its `source`.
+    def source
       # File is read everytime to avoid memory bloat of large binary files
       pathname.open('rb') { |f| f.read }
-    end
-
-    # Checks if Asset is fresh by comparing the actual mtime and
-    # digest to the inmemory model.
-    def fresh?
-      # Check current mtime and digest
-      dependency_fresh?('path' => pathname, 'mtime' => mtime, 'hexdigest' => digest)
     end
 
     # Implemented for Rack SendFile support.
     def to_path
       pathname.to_s
-    end
-
-    # `to_s` is aliased to body since static assets can't have any dependencies.
-    def to_s
-      body
     end
 
     # Save asset to disk.
@@ -74,13 +51,5 @@ module Sprockets
       # Ensure tmp file gets cleaned up
       FileUtils.rm("#{filename}+") if File.exist?("#{filename}+")
     end
-
-    private
-      def load!
-        content_type
-        mtime
-        length
-        digest
-      end
   end
 end

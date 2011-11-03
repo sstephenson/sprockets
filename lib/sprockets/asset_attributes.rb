@@ -13,16 +13,6 @@ module Sprockets
       @pathname = path.is_a?(Pathname) ? path : Pathname.new(path.to_s)
     end
 
-    # Replaces `$root` placeholder with actual environment root.
-    def expand_root
-      pathname.to_s.sub(/^\$root/, environment.root)
-    end
-
-    # Replaces environment root with `$root` placeholder.
-    def relativize_root
-      pathname.to_s.sub(/^#{Regexp.escape(environment.root)}/, '$root')
-    end
-
     # Returns paths search the load path for.
     def search_paths
       paths = [pathname.to_s]
@@ -42,9 +32,8 @@ module Sprockets
     # shaddowed in the path, but is required relatively, its logical
     # path will be incorrect.
     def logical_path
-      raise ArgumentError unless pathname.absolute?
-
       if root_path = environment.paths.detect { |path| pathname.to_s[path] }
+        path = pathname.to_s.sub("#{root_path}/", '')
         path = pathname.relative_path_from(Pathname.new(root_path)).to_s
         path = engine_extensions.inject(path) { |p, ext| p.sub(ext, '') }
         path = "#{path}#{engine_format_extension}" unless format_extension
@@ -111,28 +100,6 @@ module Sprockets
             engine_content_type ||
             'application/octet-stream'
         end
-      end
-    end
-
-    # Gets digest fingerprint.
-    #
-    #     "foo-0aa2105d29558f3eb790d411d7d8fb66.js"
-    #     # => "0aa2105d29558f3eb790d411d7d8fb66"
-    #
-    def path_fingerprint
-      pathname.basename(extensions.last.to_s).to_s =~ /-([0-9a-f]{7,40})$/ ? $1 : nil
-    end
-
-    # Injects digest fingerprint into path.
-    #
-    #     "foo.js"
-    #     # => "foo-0aa2105d29558f3eb790d411d7d8fb66.js"
-    #
-    def path_with_fingerprint(digest)
-      if old_digest = path_fingerprint
-        pathname.sub(old_digest, digest).to_s
-      else
-        pathname.to_s.sub(/\.(\w+)$/) { |ext| "-#{digest}#{ext}" }
       end
     end
 

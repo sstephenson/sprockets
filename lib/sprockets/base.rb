@@ -1,7 +1,7 @@
 require 'sprockets/asset_attributes'
 require 'sprockets/bundled_asset'
 require 'sprockets/caching'
-require 'sprockets/digest'
+require 'sprockets/processed_asset'
 require 'sprockets/processing'
 require 'sprockets/server'
 require 'sprockets/static_asset'
@@ -11,8 +11,65 @@ require 'pathname'
 module Sprockets
   # `Base` class for `Environment` and `Index`.
   class Base
-    include Digest
     include Caching, Processing, Server, Trail
+
+    # Returns a `Digest` implementation class.
+    #
+    # Defaults to `Digest::MD5`.
+    attr_reader :digest_class
+
+    # Assign a `Digest` implementation class. This maybe any Ruby
+    # `Digest::` implementation such as `Digest::MD5` or
+    # `Digest::SHA1`.
+    #
+    #     environment.digest_class = Digest::SHA1
+    #
+    def digest_class=(klass)
+      expire_index!
+      @digest_class = klass
+    end
+
+    # The `Environment#version` is a custom value used for manually
+    # expiring all asset caches.
+    #
+    # Sprockets is able to track most file and directory changes and
+    # will take care of expiring the cache for you. However, its
+    # impossible to know when any custom helpers change that you mix
+    # into the `Context`.
+    #
+    # It would be wise to increment this value anytime you make a
+    # configuration change to the `Environment` object.
+    attr_reader :version
+
+    # Assign an environment version.
+    #
+    #     environment.version = '2.0'
+    #
+    def version=(version)
+      expire_index!
+      @version = version
+    end
+
+    # Returns a `Digest` instance for the `Environment`.
+    #
+    # This value serves two purposes. If two `Environment`s have the
+    # same digest value they can be treated as equal. This is more
+    # useful for comparing environment states between processes rather
+    # than in the same. Two equal `Environment`s can share the same
+    # cached assets.
+    #
+    # The value also provides a seed digest for all `Asset`
+    # digests. Any change in the environment digest will affect all of
+    # its assets.
+    def digest
+      # Compute the initial digest using the implementation class. The
+      # Sprockets release version and custom environment version are
+      # mixed in. So any new releases will affect all your assets.
+      @digest ||= digest_class.new.update(VERSION).update(version.to_s)
+
+      # Returned a dupped copy so the caller can safely mutate it with `.update`
+      @digest.dup
+    end
 
     # Get and set `Logger` instance.
     attr_accessor :logger
@@ -63,14 +120,10 @@ module Sprockets
     # Read and compute digest of filename.
     #
     # Subclasses may cache this method.
-    def file_digest(path, data = nil)
+    def file_digest(path)
       if stat = self.stat(path)
-        # `data` maybe provided
-        if data
-          digest.update(data)
-
         # If its a file, digest the contents
-        elsif stat.file?
+        if stat.file?
           digest.file(path.to_s)
 
         # If its a directive, digest the list of filenames
@@ -93,13 +146,21 @@ module Sprockets
 
     # Find asset by logical path or expanded path.
     def find_asset(path, options = {})
-      pathname = Pathname.new(path)
+      logical_path = path
+      pathname     = Pathname.new(path)
 
-      if pathname.absolute?
-        build_asset(attributes_for(pathname).logical_path, pathname, options)
+      if pathname.to_s =~ /^\//
+        return unless stat(pathname)
+        logical_path = attributes_for(pathname).logical_path
       else
-        find_asset_in_path(pathname, options)
+        begin
+          pathname = resolve(logical_path)
+        rescue FileNotFound
+          return nil
+        end
       end
+
+      build_asset(logical_path, pathname, options)
     end
 
     # Preferred `find_asset` shorthand.
@@ -172,15 +233,35 @@ module Sprockets
       def build_asset(logical_path, pathname, options)
         pathname = Pathname.new(pathname)
 
-        return unless stat(pathname)
-
         # If there are any processors to run on the pathname, use
         # `BundledAsset`. Otherwise use `StaticAsset` and treat is as binary.
         if attributes_for(pathname).processors.any?
-          BundledAsset.new(self, logical_path, pathname, options)
+          if options[:bundle] == false
+            circular_call_protection(pathname.to_s) do
+              ProcessedAsset.new(index, logical_path, pathname)
+            end
+          else
+            BundledAsset.new(index, logical_path, pathname)
+          end
         else
-          StaticAsset.new(self, logical_path, pathname)
+          StaticAsset.new(index, logical_path, pathname)
         end
+      end
+
+      def cache_key_for(path, options)
+        "#{path}:#{options[:bundle] ? '1' : '0'}"
+      end
+
+      def circular_call_protection(path)
+        reset = Thread.current[:sprockets_circular_calls].nil?
+        calls = Thread.current[:sprockets_circular_calls] ||= Set.new
+        if calls.include?(path)
+          raise CircularDependencyError, "#{path} has already been required"
+        end
+        calls << path
+        yield
+      ensure
+        Thread.current[:sprockets_circular_calls] = nil if reset
       end
   end
 end

@@ -10,24 +10,24 @@ module AssetTests
     assert @asset.pathname.exist?
   end
 
-  test "logical path can find itself" do
-    assert_equal @asset, @env[@asset.logical_path]
-  end
-
   test "mtime" do
     assert @asset.mtime
   end
 
-  test "digest" do
-    assert @asset.digest
+  test "digest is source digest" do
+    assert_equal @env.digest.update(@asset.to_s).hexdigest, @asset.digest
+  end
+
+  test "length is source length" do
+    assert_equal @asset.to_s.length, @asset.length
   end
 
   test "stale?" do
-    assert !@asset.stale?
+    assert !@asset.stale?(@env)
   end
 
   test "fresh?" do
-    assert @asset.fresh?
+    assert @asset.fresh?(@env)
   end
 
   test "dependencies are an Array" do
@@ -40,6 +40,14 @@ module AssetTests
 
   test "body is a String" do
     assert_kind_of String, @asset.body
+  end
+
+  test "to_a body parts equals to_s" do
+    source = ""
+    @asset.to_a.each do |asset|
+      source << asset.body
+    end
+    assert_equal @asset.to_s, source
   end
 
   test "write to file" do
@@ -67,6 +75,248 @@ module AssetTests
   end
 end
 
+module FreshnessTests
+  def self.test(name, &block)
+    define_method("test #{name.inspect}", &block)
+  end
+
+  test "asset is stale when its contents has changed" do
+    filename = fixture_path('asset/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a;" }
+      asset = asset('test.js')
+
+      assert asset.fresh?(@env)
+
+      File.open(filename, 'w') { |f| f.write "b;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, filename)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale if the file is removed" do
+    filename = fixture_path('asset/test.js')
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "a;" }
+      asset = asset('test.js')
+
+      assert asset.fresh?(@env)
+
+      File.unlink(filename)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its source files is modified" do
+    main = fixture_path('asset/test-main.js')
+    dep  = fixture_path('asset/test-dep.js')
+
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write "//= require test-dep\n" }
+      File.open(dep, 'w') { |f| f.write "a;" }
+      asset = asset('test-main.js')
+
+      assert asset.fresh?(@env)
+
+      File.open(dep, 'w') { |f| f.write "b;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dep)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its dependencies is modified" do
+    main = fixture_path('asset/test-main.js')
+    dep  = fixture_path('asset/test-dep.js')
+
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write "//= depend_on test-dep\n" }
+      File.open(dep, 'w') { |f| f.write "a;" }
+      asset = asset('test-main.js')
+
+      assert asset.fresh?(@env)
+
+      File.open(dep, 'w') { |f| f.write "b;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dep)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its asset dependencies is modified" do
+    main = fixture_path('asset/test-main.js')
+    dep  = fixture_path('asset/test-dep.js')
+
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write "//= depend_on_asset test-dep\n" }
+      File.open(dep, 'w') { |f| f.write "a;" }
+      asset = asset('test-main.js')
+
+      assert asset.fresh?(@env)
+
+      File.open(dep, 'w') { |f| f.write "b;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dep)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its source files dependencies is modified" do
+    a = fixture_path('asset/test-a.js')
+    b = fixture_path('asset/test-b.js')
+    c = fixture_path('asset/test-c.js')
+
+    sandbox a, b, c do
+      File.open(a, 'w') { |f| f.write "//= require test-b\n" }
+      File.open(b, 'w') { |f| f.write "//= require test-c\n" }
+      File.open(c, 'w') { |f| f.write "c;" }
+      asset_a = asset('test-a.js')
+      asset_b = asset('test-b.js')
+      asset_c = asset('test-c.js')
+
+      assert asset_a.fresh?(@env)
+      assert asset_b.fresh?(@env)
+      assert asset_c.fresh?(@env)
+
+      File.open(c, 'w') { |f| f.write "x;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, c)
+
+      assert asset_a.stale?(@env)
+      assert asset_b.stale?(@env)
+      assert asset_c.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its dependency dependencies is modified" do
+    a = fixture_path('asset/test-a.js')
+    b = fixture_path('asset/test-b.js')
+    c = fixture_path('asset/test-c.js')
+
+    sandbox a, b, c do
+      File.open(a, 'w') { |f| f.write "//= require test-b\n" }
+      File.open(b, 'w') { |f| f.write "//= depend_on test-c\n" }
+      File.open(c, 'w') { |f| f.write "c;" }
+      asset_a = asset('test-a.js')
+      asset_b = asset('test-b.js')
+      asset_c = asset('test-c.js')
+
+      assert asset_a.fresh?(@env)
+      assert asset_b.fresh?(@env)
+      assert asset_c.fresh?(@env)
+
+      File.open(c, 'w') { |f| f.write "x;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, c)
+
+      assert asset_a.stale?(@env)
+      assert asset_b.stale?(@env)
+      assert asset_c.stale?(@env)
+    end
+  end
+
+  test "asset is stale when one of its asset dependency dependencies is modified" do
+    a = fixture_path('asset/test-a.js')
+    b = fixture_path('asset/test-b.js')
+    c = fixture_path('asset/test-c.js')
+
+    sandbox a, b, c do
+      File.open(a, 'w') { |f| f.write "//= depend_on_asset test-b\n" }
+      File.open(b, 'w') { |f| f.write "//= depend_on_asset test-c\n" }
+      File.open(c, 'w') { |f| f.write "c;" }
+      asset_a = asset('test-a.js')
+      asset_b = asset('test-b.js')
+      asset_c = asset('test-c.js')
+
+      assert asset_a.fresh?(@env)
+      assert asset_b.fresh?(@env)
+      assert asset_c.fresh?(@env)
+
+      File.open(c, 'w') { |f| f.write "x;" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, c)
+
+      assert asset_a.stale?(@env)
+      assert asset_b.stale?(@env)
+      assert asset_c.stale?(@env)
+    end
+  end
+
+  test "asset if stale if once of its source files is removed" do
+    main = fixture_path('asset/test-main.js')
+    dep  = fixture_path('asset/test-dep.js')
+
+    sandbox main, dep do
+      File.open(main, 'w') { |f| f.write "//= require test-dep\n" }
+      File.open(dep, 'w') { |f| f.write "a;" }
+      asset = asset('test-main.js')
+
+      assert asset.fresh?(@env)
+
+      File.unlink(dep)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale if a file is added to its require directory" do
+    asset = asset("tree/all_with_require_directory.js")
+    assert asset.fresh?(@env)
+
+    dirname  = File.join(fixture_path("asset"), "tree/all")
+    filename = File.join(dirname, "z.js")
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "z" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dirname)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale if a file is added to its require tree" do
+    asset = asset("tree/all_with_require_tree.js")
+    assert asset.fresh?(@env)
+
+    dirname  = File.join(fixture_path("asset"), "tree/all/b/c")
+    filename = File.join(dirname, "z.js")
+
+    sandbox filename do
+      File.open(filename, 'w') { |f| f.write "z" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, dirname)
+
+      assert asset.stale?(@env)
+    end
+  end
+
+  test "asset is stale if its declared dependency changes" do
+    sprite = fixture_path('asset/sprite.css.erb')
+    image  = fixture_path('asset/POW.png')
+
+    sandbox sprite, image do
+      asset = asset('sprite.css')
+
+      assert asset.fresh?(@env)
+
+      File.open(image, 'w') { |f| f.write "(change)" }
+      mtime = Time.now + 1
+      File.utime(mtime, mtime, image)
+
+      assert asset.stale?(@env)
+    end
+  end
+end
+
 class StaticAssetTest < Sprockets::TestCase
   def setup
     @env = Sprockets::Environment.new
@@ -77,6 +327,10 @@ class StaticAssetTest < Sprockets::TestCase
   end
 
   include AssetTests
+
+  test "logical path can find itself" do
+    assert_equal @asset, @env[@asset.logical_path]
+  end
 
   test "class" do
     assert_kind_of Sprockets::StaticAsset, @asset
@@ -107,7 +361,7 @@ class StaticAssetTest < Sprockets::TestCase
   end
 
   test "asset is fresh if its mtime and contents are the same" do
-    assert @asset.fresh?
+    assert @asset.fresh?(@env)
   end
 
   test "asset is fresh if its mtime is changed but its contents is the same" do
@@ -117,13 +371,13 @@ class StaticAssetTest < Sprockets::TestCase
       File.open(filename, 'w') { |f| f.write "a" }
       asset = @env['test-POW.png']
 
-      assert asset.fresh?
+      assert asset.fresh?(@env)
 
       File.open(filename, 'w') { |f| f.write "a" }
       mtime = Time.now + 1
       File.utime(mtime, mtime, filename)
 
-      assert asset.fresh?
+      assert asset.fresh?(@env)
     end
   end
 
@@ -134,13 +388,13 @@ class StaticAssetTest < Sprockets::TestCase
       File.open(filename, 'w') { |f| f.write "a" }
       asset = @env['POW.png']
 
-      assert asset.fresh?
+      assert asset.fresh?(@env)
 
       File.open(filename, 'w') { |f| f.write "b" }
       mtime = Time.now + 1
       File.utime(mtime, mtime, filename)
 
-      assert asset.stale?
+      assert asset.stale?(@env)
     end
   end
 
@@ -151,11 +405,11 @@ class StaticAssetTest < Sprockets::TestCase
       File.open(filename, 'w') { |f| f.write "a" }
       asset = @env['POW.png']
 
-      assert asset.fresh?
+      assert asset.fresh?(@env)
 
       File.unlink(filename)
 
-      assert asset.stale?
+      assert asset.stale?(@env)
     end
   end
 
@@ -163,7 +417,7 @@ class StaticAssetTest < Sprockets::TestCase
     expected = @asset
     hash     = {}
     @asset.encode_with(hash)
-    actual   = @env.asset_from_hash(hash)
+    actual   = Sprockets::Asset.from_hash(@env, hash)
 
     assert_kind_of Sprockets::StaticAsset, actual
     assert_equal expected.logical_path, actual.logical_path
@@ -171,6 +425,7 @@ class StaticAssetTest < Sprockets::TestCase
     assert_equal expected.content_type, actual.content_type
     assert_equal expected.length, actual.length
     assert_equal expected.digest, actual.digest
+    assert_equal expected.fresh?(@env), actual.fresh?(@env)
 
     assert_equal expected.dependencies, actual.dependencies
     assert_equal expected.to_a, actual.to_a
@@ -182,16 +437,115 @@ class StaticAssetTest < Sprockets::TestCase
   end
 end
 
+class ProcessedAssetTest < Sprockets::TestCase
+  include FreshnessTests
+
+  def setup
+    @env = Sprockets::Environment.new
+    @env.append_path(fixture_path('asset'))
+    @env.cache = {}
+
+    @asset = @env.find_asset('application.js', :bundle => false)
+    @bundle = false
+  end
+
+  include AssetTests
+
+  test "logical path can find itself" do
+    assert_equal @asset, @env.find_asset(@asset.logical_path, :bundle => false)
+  end
+
+  test "class" do
+    assert_kind_of Sprockets::ProcessedAsset, @asset
+  end
+
+  test "content type" do
+    assert_equal "application/javascript", @asset.content_type
+  end
+
+  test "length" do
+    assert_equal 67, @asset.length
+  end
+
+  test "splat" do
+    assert_equal [@asset], @asset.to_a
+  end
+
+  test "dependencies" do
+    assert_equal [], @asset.dependencies
+  end
+
+  test "to_s" do
+    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
+  end
+
+  test "each" do
+    body = ""
+    @asset.each { |part| body << part }
+    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
+  end
+
+  test "to_a" do
+    body = ""
+    @asset.to_a.each do |asset|
+      body << asset.body
+    end
+    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
+  end
+
+  test "asset is fresh if its mtime and contents are the same" do
+    assert @asset.fresh?(@env)
+  end
+
+  test "serializing asset to and from hash" do
+    expected = @asset
+    hash     = {}
+    @asset.encode_with(hash)
+    actual   = Sprockets::Asset.from_hash(@env, hash)
+
+    assert_kind_of Sprockets::ProcessedAsset, actual
+    assert_equal expected.logical_path, actual.logical_path
+    assert_equal expected.pathname, actual.pathname
+    assert_equal expected.content_type, actual.content_type
+    assert_equal expected.length, actual.length
+    assert_equal expected.digest, actual.digest
+    assert_equal expected.fresh?(@env), actual.fresh?(@env)
+
+    assert_equal expected.dependencies, actual.dependencies
+    assert_equal expected.to_a, actual.to_a
+    assert_equal expected.body, actual.body
+    assert_equal expected.to_s, actual.to_s
+
+    assert actual.eql?(expected)
+    assert expected.eql?(actual)
+  end
+
+  def asset(logical_path)
+    @env.find_asset(logical_path, :bundle => @bundle)
+  end
+
+  def resolve(logical_path)
+    @env.resolve(logical_path)
+  end
+end
+
 class BundledAssetTest < Sprockets::TestCase
+  include FreshnessTests
+
   def setup
     @env = Sprockets::Environment.new
     @env.append_path(fixture_path('asset'))
     @env.cache = {}
 
     @asset = @env['application.js']
+    @bundle = true
   end
 
   include AssetTests
+
+  test "logical path can find itself" do
+    assert_equal @asset, @env[@asset.logical_path]
+  end
 
   test "class" do
     assert_kind_of Sprockets::BundledAsset, @asset
@@ -229,7 +583,11 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal [resolve("project.js")], asset("project.js").to_a.map(&:pathname)
   end
 
-  test "asset includes self as dependency" do
+  test "splatted assets are processed assets" do
+    assert asset("project.js").to_a.all? { |a| a.is_a?(Sprockets::ProcessedAsset) }
+  end
+
+  test "asset doesn't include self as dependency" do
     assert_equal [], asset("project.js").dependencies.map(&:pathname)
   end
 
@@ -300,7 +658,7 @@ class BundledAssetTest < Sprockets::TestCase
 
   test "can't require absolute files outside the load path" do
     assert_raise Sprockets::FileOutsidePaths do
-      warn asset("absolute/require_outside_path.js").to_s
+      asset("absolute/require_outside_path.js").to_s
     end
   end
 
@@ -431,243 +789,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "asset is fresh if its mtime and contents are the same" do
-    assert asset("application.js").fresh?
-  end
-
-  test "asset is stale when its contents has changed" do
-    filename = fixture_path('asset/test.js')
-
-    sandbox filename do
-      File.open(filename, 'w') { |f| f.write "a;" }
-      asset = @env['test.js']
-
-      assert asset.fresh?
-
-      File.open(filename, 'w') { |f| f.write "b;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, filename)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale if the file is removed" do
-    filename = fixture_path('asset/test.js')
-
-    sandbox filename do
-      File.open(filename, 'w') { |f| f.write "a;" }
-      asset = @env['test.js']
-
-      assert asset.fresh?
-
-      File.unlink(filename)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale when one of its source files is modified" do
-    main = fixture_path('asset/test-main.js')
-    dep  = fixture_path('asset/test-dep.js')
-
-    sandbox main, dep do
-      File.open(main, 'w') { |f| f.write "//= require test-dep\n" }
-      File.open(dep, 'w') { |f| f.write "a;" }
-      asset = @env['test-main.js']
-
-      assert asset.fresh?
-
-      File.open(dep, 'w') { |f| f.write "b;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, dep)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale when one of its dependencies is modified" do
-    main = fixture_path('asset/test-main.js')
-    dep  = fixture_path('asset/test-dep.js')
-
-    sandbox main, dep do
-      File.open(main, 'w') { |f| f.write "//= depend_on test-dep\n" }
-      File.open(dep, 'w') { |f| f.write "a;" }
-      asset = @env['test-main.js']
-
-      assert asset.fresh?
-
-      File.open(dep, 'w') { |f| f.write "b;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, dep)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale when one of its asset dependencies is modified" do
-    main = fixture_path('asset/test-main.js')
-    dep  = fixture_path('asset/test-dep.js')
-
-    sandbox main, dep do
-      File.open(main, 'w') { |f| f.write "//= depend_on_asset test-dep\n" }
-      File.open(dep, 'w') { |f| f.write "a;" }
-      asset = @env['test-main.js']
-
-      assert asset.fresh?
-
-      File.open(dep, 'w') { |f| f.write "b;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, dep)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale when one of its source files dependencies is modified" do
-    a = fixture_path('asset/test-a.js')
-    b = fixture_path('asset/test-b.js')
-    c = fixture_path('asset/test-c.js')
-
-    sandbox a, b, c do
-      File.open(a, 'w') { |f| f.write "//= require test-b\n" }
-      File.open(b, 'w') { |f| f.write "//= require test-c\n" }
-      File.open(c, 'w') { |f| f.write "c;" }
-      asset_a = @env['test-a.js']
-      asset_b = @env['test-b.js']
-      asset_c = @env['test-c.js']
-
-      assert asset_a.fresh?
-      assert asset_b.fresh?
-      assert asset_c.fresh?
-
-      File.open(c, 'w') { |f| f.write "x;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, c)
-
-      assert asset_a.stale?
-      assert asset_b.stale?
-      assert asset_c.stale?
-    end
-  end
-
-  test "asset is stale when one of its dependency dependencies is modified" do
-    a = fixture_path('asset/test-a.js')
-    b = fixture_path('asset/test-b.js')
-    c = fixture_path('asset/test-c.js')
-
-    sandbox a, b, c do
-      File.open(a, 'w') { |f| f.write "//= require test-b\n" }
-      File.open(b, 'w') { |f| f.write "//= depend_on test-c\n" }
-      File.open(c, 'w') { |f| f.write "c;" }
-      asset_a = @env['test-a.js']
-      asset_b = @env['test-b.js']
-      asset_c = @env['test-c.js']
-
-      assert asset_a.fresh?
-      assert asset_b.fresh?
-      assert asset_c.fresh?
-
-      File.open(c, 'w') { |f| f.write "x;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, c)
-
-      assert asset_a.stale?
-      assert asset_b.stale?
-      assert asset_c.stale?
-    end
-  end
-
-  test "asset is stale when one of its asset dependency dependencies is modified" do
-    a = fixture_path('asset/test-a.js')
-    b = fixture_path('asset/test-b.js')
-    c = fixture_path('asset/test-c.js')
-
-    sandbox a, b, c do
-      File.open(a, 'w') { |f| f.write "//= depend_on_asset test-b\n" }
-      File.open(b, 'w') { |f| f.write "//= depend_on_asset test-c\n" }
-      File.open(c, 'w') { |f| f.write "c;" }
-      asset_a = @env['test-a.js']
-      asset_b = @env['test-b.js']
-      asset_c = @env['test-c.js']
-
-      assert asset_a.fresh?
-      assert asset_b.fresh?
-      assert asset_c.fresh?
-
-      File.open(c, 'w') { |f| f.write "x;" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, c)
-
-      assert asset_a.stale?
-      assert asset_b.stale?
-      assert asset_c.stale?
-    end
-  end
-
-  test "asset if stale if once of its source files is removed" do
-    main = fixture_path('asset/test-main.js')
-    dep  = fixture_path('asset/test-dep.js')
-
-    sandbox main, dep do
-      File.open(main, 'w') { |f| f.write "//= require test-dep\n" }
-      File.open(dep, 'w') { |f| f.write "a;" }
-      asset = @env['test-main.js']
-
-      assert asset.fresh?
-
-      File.unlink(dep)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale if a file is added to its require directory" do
-    asset = asset("tree/all_with_require_directory.js")
-    assert asset.fresh?
-
-    dirname  = File.join(fixture_path("asset"), "tree/all")
-    filename = File.join(dirname, "z.js")
-
-    sandbox filename do
-      File.open(filename, 'w') { |f| f.write "z" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, dirname)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale if a file is added to its require tree" do
-    asset = asset("tree/all_with_require_tree.js")
-    assert asset.fresh?
-
-    dirname  = File.join(fixture_path("asset"), "tree/all/b/c")
-    filename = File.join(dirname, "z.js")
-
-    sandbox filename do
-      File.open(filename, 'w') { |f| f.write "z" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, dirname)
-
-      assert asset.stale?
-    end
-  end
-
-  test "asset is stale if its declared dependency changes" do
-    sprite = fixture_path('asset/sprite.css.erb')
-    image  = fixture_path('asset/POW.png')
-
-    sandbox sprite, image do
-      asset = @env['sprite.css']
-
-      assert asset.fresh?
-
-      File.open(image, 'w') { |f| f.write "(change)" }
-      mtime = Time.now + 1
-      File.utime(mtime, mtime, image)
-
-      assert asset.stale?
-    end
+    assert asset("application.js").fresh?(@env)
   end
 
   test "legacy constants.yml" do
@@ -688,7 +810,7 @@ class BundledAssetTest < Sprockets::TestCase
     expected = @asset
     hash     = {}
     @asset.encode_with(hash)
-    actual   = @env.asset_from_hash(hash)
+    actual   = Sprockets::Asset.from_hash(@env, hash)
 
     assert_kind_of Sprockets::BundledAsset, actual
     assert_equal expected.logical_path, actual.logical_path
@@ -698,6 +820,8 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal expected.content_type, actual.content_type
     assert_equal expected.length, actual.length
     assert_equal expected.digest, actual.digest
+    assert_equal expected.fresh?(@env), actual.fresh?(@env)
+
     assert_equal expected.dependencies, actual.dependencies
     assert_equal expected.to_a, actual.to_a
     assert_equal expected.to_s, actual.to_s
@@ -720,7 +844,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   def asset(logical_path)
-    @env[logical_path]
+    @env.find_asset(logical_path, :bundle => @bundle)
   end
 
   def resolve(logical_path)

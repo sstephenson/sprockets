@@ -171,6 +171,7 @@ class TestServer < Sprockets::TestCase
     digest = last_response.headers['ETag'][/"(.+)"/, 1]
 
     get "/assets/application-#{digest}.js"
+    assert_equal 200, last_response.status
     assert_match %r{max-age}, last_response.headers['Cache-Control']
   end
 

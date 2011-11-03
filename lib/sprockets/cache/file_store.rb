@@ -18,24 +18,15 @@ module Sprockets
 
       # Lookup value in cache
       def [](key)
-        pathname = path_for(key)
+        pathname = @root.join(key)
         pathname.exist? ? pathname.open('rb') { |f| Marshal.load(f) } : nil
       end
 
       # Save value to cache
       def []=(key, value)
-        path_for(key).open('w') { |f| Marshal.dump(value, f)}
+        @root.join(key).open('w') { |f| Marshal.dump(value, f)}
         value
       end
-
-      private
-        # Returns path for cache key.
-        #
-        # The key may include some funky characters so hash it into
-        # safe hex.
-        def path_for(key)
-          @root.join(::Digest::MD5.hexdigest(key))
-        end
     end
   end
 end

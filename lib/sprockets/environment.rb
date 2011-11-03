@@ -66,27 +66,18 @@ module Sprockets
 
     # Cache `find_asset` calls
     def find_asset(path, options = {})
-      # Ensure inmemory cached assets are still fresh on every lookup
-      if (asset = @assets[path.to_s]) && asset.fresh?
-        asset
-      elsif asset = super
-        # Eager load asset to catch build errors
-        asset.to_s
+      options[:bundle] = true unless options.key?(:bundle)
 
-        @assets[path.to_s] = @assets[asset.pathname.to_s] = asset
+      # Ensure inmemory cached assets are still fresh on every lookup
+      if (asset = @assets[cache_key_for(path, options)]) && asset.fresh?(self)
+        asset
+      elsif asset = index.find_asset(path, options)
+        # Cache is pushed upstream by Index#find_asset
         asset
       end
     end
 
     protected
-      # Cache asset building in persisted cache.
-      def build_asset(path, pathname, options)
-        # Persisted cache
-        cache_asset(pathname.to_s) do
-          super
-        end
-      end
-
       def expire_index!
         # Clear digest to be recomputed
         @digest = nil

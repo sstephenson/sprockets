@@ -1,38 +1,7 @@
-require 'sprockets/bundled_asset'
-require 'sprockets/static_asset'
-
 module Sprockets
   # `Caching` is an internal mixin whose public methods are exposed on
   # the `Environment` and `Index` classes.
   module Caching
-    # Return `Asset` instance for serialized `Hash`.
-    def asset_from_hash(hash)
-      return unless hash.is_a?(Hash)
-      case hash['class']
-      when 'BundledAsset'
-        BundledAsset.from_hash(self, hash)
-      when 'StaticAsset'
-        StaticAsset.from_hash(self, hash)
-      else
-        nil
-      end
-    rescue Exception => e
-      logger.debug "Cache for Asset (#{hash['logical_path']}) is stale"
-      logger.debug e
-      nil
-    end
-
-    def cache_hash(key, version)
-      if cache.nil?
-        yield
-      elsif hash = cache_get_hash(key, version)
-        hash
-      elsif hash = yield
-        cache_set_hash(key, version, hash)
-        hash
-      end
-    end
-
     protected
       # Cache helper method. Takes a `path` argument which maybe a
       # logical path or fully expanded path. The `&block` is passed
@@ -43,7 +12,7 @@ module Sprockets
           yield
 
         # Check cache for `path`
-        elsif (asset = asset_from_hash(cache_get_hash(path.to_s, digest.hexdigest))) && asset.fresh?
+        elsif (asset = Asset.from_hash(self, cache_get_hash(path.to_s))) && asset.fresh?(self)
           asset
 
          # Otherwise yield block that slowly finds and builds the asset
@@ -52,12 +21,12 @@ module Sprockets
           asset.encode_with(hash)
 
           # Save the asset to its path
-          cache_set_hash(path.to_s, digest.hexdigest, hash)
+          cache_set_hash(path.to_s, hash)
 
           # Since path maybe a logical or full pathname, save the
           # asset its its full path too
           if path.to_s != asset.pathname.to_s
-            cache_set_hash(asset.pathname.to_s, digest.hexdigest, hash)
+            cache_set_hash(asset.pathname.to_s, hash)
           end
 
           asset
@@ -68,20 +37,20 @@ module Sprockets
       # Strips `Environment#root` from key to make the key work
       # consisently across different servers. The key is also hashed
       # so it does not exceed 250 characters.
-      def cache_key_for(key)
-        File.join('sprockets', digest.hexdigest(key.sub(root, '')))
+      def expand_cache_key(key)
+        File.join('sprockets', digest_class.hexdigest(key.sub(root, '')))
       end
 
-      def cache_get_hash(key, version)
-        hash = cache_get(cache_key_for(key))
-        if hash.is_a?(Hash) && version == hash['_version']
+      def cache_get_hash(key)
+        hash = cache_get(expand_cache_key(key))
+        if hash.is_a?(Hash) && digest.hexdigest == hash['_version']
           hash
         end
       end
 
-      def cache_set_hash(key, version, hash)
-        hash['_version'] = version
-        cache_set(cache_key_for(key), hash)
+      def cache_set_hash(key, hash)
+        hash['_version'] = digest.hexdigest
+        cache_set(expand_cache_key(key), hash)
         hash
       end
 

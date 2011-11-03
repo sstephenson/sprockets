@@ -66,7 +66,6 @@ module EnvironmentTests
   test "asset_data_uri helper" do
     asset = @env["with_data_uri.css"]
     assert_equal "body {\n  background-image: url(data:image/gif;base64,R0lGODlhAQABAIAAAP%2F%2F%2FwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw%3D%3D) no-repeat;\n}\n", asset.to_s
-    assert asset.send(:dependency_paths).find { |dependency| dependency["path"] == fixture_path("default/blank.gif") }
   end
 
   test "lookup mime type" do
@@ -116,15 +115,6 @@ module EnvironmentTests
 
   test "find static asset with leading slash in environment" do
     assert_equal "Hello world\n", @env[fixture_path("default/hello.txt")].to_s
-  end
-
-  test "find asset with digest" do
-    digest = @env["hello.txt"].digest
-    assert_equal "Hello world\n", @env["hello-#{digest}.txt"].to_s
-  end
-
-  test "find asset with invalid digest" do
-    assert_nil @env["hello-ffffffff.txt"]
   end
 
   test "find index.js in directory" do
@@ -214,10 +204,6 @@ module EnvironmentTests
   test "CoffeeScript files are compiled in a closure" do
     script = @env["coffee"].to_s
     assert_equal "undefined", ExecJS.exec(script)
-  end
-
-  test "assets environment reference is its caller" do
-    assert_equal @env, @env["gallery.js"].environment
   end
 end
 

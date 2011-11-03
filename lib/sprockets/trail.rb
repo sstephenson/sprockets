@@ -86,29 +86,5 @@ module Sprockets
       def trail
         @trail
       end
-
-      def find_asset_in_path(logical_path, options = {})
-        # Strip fingerprint on logical path if there is one.
-        # Not sure how valuable this feature is...
-        if fingerprint = attributes_for(logical_path).path_fingerprint
-          pathname = resolve(logical_path.to_s.sub("-#{fingerprint}", ''))
-        else
-          pathname = resolve(logical_path)
-        end
-      rescue FileNotFound
-        nil
-      else
-        # Build the asset for the actual pathname
-        asset = build_asset(logical_path, pathname, options)
-
-        # Double check request fingerprint against actual digest
-        # Again, not sure if this code path is even reachable
-        if fingerprint && fingerprint != asset.digest
-          logger.error "Nonexistent asset #{logical_path} @ #{fingerprint}"
-          asset = nil
-        end
-
-        asset
-      end
   end
 end

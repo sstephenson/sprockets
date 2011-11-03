@@ -12,6 +12,8 @@ module Sprockets
   # `Environment#index`.
   class Index < Base
     def initialize(environment)
+      @environment = environment
+
       # Copy environment attributes
       @logger            = environment.logger
       @context_class     = environment.context_class
@@ -37,20 +39,32 @@ module Sprockets
     end
 
     # Cache calls to `file_digest`
-    def file_digest(pathname, data = nil)
-      memoize(@digests, pathname.to_s) { super }
+    def file_digest(pathname)
+      key = pathname.to_s
+      if @digests.key?(key)
+        @digests[key]
+      else
+        @digests[key] = super
+      end
     end
 
     # Cache `find_asset` calls
     def find_asset(path, options = {})
-      if asset = @assets[path.to_s]
+      options[:bundle] = true unless options.key?(:bundle)
+      if asset = @assets[cache_key_for(path, options)]
         asset
       elsif asset = super
-        # Eager load asset to catch build errors
-        asset.to_s
+        logical_path_cache_key = cache_key_for(path, options)
+        full_path_cache_key    = cache_key_for(asset.pathname, options)
 
-        # Cache at logical path and expanded path
-        @assets[path.to_s] = @assets[asset.pathname.to_s] = asset
+        # Cache on Index
+        @assets[logical_path_cache_key] = @assets[full_path_cache_key] = asset
+
+        # Push cache upstream to Environment
+        @environment.instance_eval do
+          @assets[logical_path_cache_key] = @assets[full_path_cache_key] = asset
+        end
+
         asset
       end
     end
@@ -65,18 +79,17 @@ module Sprockets
       # Cache asset building in memory and in persisted cache.
       def build_asset(path, pathname, options)
         # Memory cache
-        memoize(@assets, pathname.to_s) do
-          # Persisted cache
-          cache_asset(pathname.to_s) do
-            super
+        key = cache_key_for(pathname, options)
+        if @assets.key?(key)
+          @assets[key]
+        else
+          @assets[key] = begin
+            # Persisted cache
+            cache_asset(key) do
+              super
+            end
           end
         end
-      end
-
-    private
-      # Simple memoize helper that stores `nil` values
-      def memoize(hash, key)
-        hash.key?(key) ? hash[key] : hash[key] = yield
       end
   end
 end

@@ -32,8 +32,8 @@ module Sprockets
       @__LINE__     = nil
 
       @_required_paths    = []
-      @_dependency_paths  = Set.new([pathname.to_s])
-      @_dependency_assets = Set.new
+      @_dependency_paths  = Set.new
+      @_dependency_assets = Set.new([pathname.to_s])
     end
 
     # Returns the environment path that contains the file.
@@ -78,7 +78,7 @@ module Sprockets
       pathname   = Pathname.new(path)
       attributes = environment.attributes_for(pathname)
 
-      if pathname.absolute?
+      if pathname.to_s =~ /^\//
         pathname
 
       elsif content_type = options[:content_type]
@@ -148,7 +148,9 @@ module Sprockets
     def asset_requirable?(path)
       pathname = resolve(path)
       content_type = environment.content_type_of(pathname)
-      pathname.file? && (self.content_type.nil? || self.content_type == content_type)
+      stat = environment.stat(path)
+      return false unless stat && stat.file?
+      self.content_type.nil? || self.content_type == content_type
     end
 
     # Reads `path` and runs processors on the file.
@@ -193,7 +195,7 @@ module Sprockets
     #     $('<img>').attr('src', '<%= asset_data_uri 'avatar.jpg' %>')
     #
     def asset_data_uri(path)
-      depend_on(path)
+      depend_on_asset(path)
       asset  = environment.find_asset(path)
       base64 = Base64.encode64(asset.to_s).gsub(/\s+/, "")
       "data:#{asset.content_type};base64,#{Rack::Utils.escape(base64)}"
