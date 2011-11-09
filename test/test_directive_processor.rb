@@ -3,21 +3,21 @@ require "sprockets_test"
 class DirectiveProcessorTest < Sprockets::TestCase
   test "parsing double-slash comments" do
     directive_parser("double_slash").tap do |parser|
-      assert_equal "// Header\n//\n//\n(function() {\n})();\n", parser.processed_source
+      assert_equal "// Header\n//\n\n\n//\n\n(function() {\n})();\n", parser.processed_source
       assert_equal directives, parser.directives
     end
   end
 
   test "parsing hash comments" do
     directive_parser("hash").tap do |parser|
-      assert_equal "# Header\n#\n#\n(->)()\n", parser.processed_source
+      assert_equal "# Header\n#\n\n\n#\n\n(->)()\n", parser.processed_source
       assert_equal directives, parser.directives
     end
   end
 
   test "parsing slash-star comments" do
     directive_parser("slash_star").tap do |parser|
-      assert_equal "/* Header\n *\n *\n */\n\n(function() {\n})();\n", parser.processed_source
+      assert_equal "/* Header\n *\n\n\n *\n\n */\n\n(function() {\n})();\n", parser.processed_source
       assert_equal directives, parser.directives
     end
   end
@@ -31,7 +31,7 @@ class DirectiveProcessorTest < Sprockets::TestCase
 
   test "parsing triple-hash comments" do
     directive_parser("triple_hash").tap do |parser|
-      assert_equal "###\nHeader\n\n\n###\n\n(->)()\n", parser.processed_source
+      assert_equal "###\nHeader\n\n\n\n\n\n###\n\n(->)()\n", parser.processed_source
       assert_equal directives(1), parser.directives
     end
   end
@@ -45,7 +45,7 @@ class DirectiveProcessorTest < Sprockets::TestCase
 
   test "directives in comment after header are not parsed" do
     directive_parser("directives_after_header").tap do |parser|
-      assert_equal "/*\n * Header\n */\n\n\n\n/* Not a directive */\n\n(function() {\n})();\n\n/*= require e */\n", parser.processed_source
+      assert_equal "/*\n * Header\n\n */\n\n\n\n\n\n\n/* Not a directive */\n\n(function() {\n})();\n\n/*= require e */\n", parser.processed_source
       assert_equal [
         [3, "require", "a"],
         [6, "require", "b"],
@@ -90,7 +90,7 @@ class DirectiveProcessorTest < Sprockets::TestCase
 
   test "documentation headers" do
     directive_parser("documentation").tap do |parser|
-      assert_equal "//\n// = Foo\n//\n// == Examples\n//\n// Foo.bar()\n// => \"baz\"var Foo;\n", parser.processed_source
+      assert_equal "\n//\n// = Foo\n//\n// == Examples\n//\n// Foo.bar()\n// => \"baz\"var Foo;\n", parser.processed_source
       assert_equal [[1, "require", "project"]], parser.directives
     end
   end

@@ -103,9 +103,10 @@ module Sprockets
     # Returns the header String with any directives stripped.
     def processed_header
       lineno = 0
-      @processed_header ||= header.lines.reject { |line|
+      @processed_header ||= header.lines.map { |line|
         lineno += 1
-        directives.assoc(lineno)
+        # Replace directive line with a clean break
+        directives.assoc(lineno) ? "\n" : line
       }.join.chomp
     end
 

@@ -464,7 +464,7 @@ class ProcessedAssetTest < Sprockets::TestCase
   end
 
   test "length" do
-    assert_equal 67, @asset.length
+    assert_equal 69, @asset.length
   end
 
   test "splat" do
@@ -476,13 +476,13 @@ class ProcessedAssetTest < Sprockets::TestCase
   end
 
   test "to_s" do
-    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
+    assert_equal "\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
   end
 
   test "each" do
     body = ""
     @asset.each { |part| body << part }
-    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
+    assert_equal "\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
   end
 
   test "to_a" do
@@ -490,7 +490,7 @@ class ProcessedAssetTest < Sprockets::TestCase
     @asset.to_a.each do |asset|
       body << asset.body
     end
-    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
+    assert_equal "\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
   end
 
   test "asset is fresh if its mtime and contents are the same" do
@@ -556,21 +556,21 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "length" do
-    assert_equal 157, @asset.length
+    assert_equal 159, @asset.length
   end
 
   test "to_s" do
-    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
+    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", @asset.to_s
   end
 
   test "each" do
     body = ""
     @asset.each { |part| body << part }
-    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
+    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
   end
 
   test "requiring the same file multiple times has no effect" do
-    assert_equal read("project.js")+"\n", asset("multiple.js").to_s
+    assert_equal read("project.js")+"\n\n\n", asset("multiple.js").to_s
   end
 
   test "requiring a file of a different format raises an exception" do
@@ -602,12 +602,12 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "bundled asset body is just its own contents" do
-    assert_equal "\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
+    assert_equal "\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
       asset("application.js").body
   end
 
   test "bundling joins files with blank line" do
-    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
+    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n",
       asset("application.js").to_s
   end
 
@@ -628,16 +628,16 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "processing a source file with unknown extensions" do
-    assert_equal read("users.js") + "var jQuery;\n", asset("unknownexts.min.js").to_s
+    assert_equal read("users.js") + "var jQuery;\n\n\n", asset("unknownexts.min.js").to_s
   end
 
   test "processing a source file in compat mode" do
-    assert_equal read("project.js") + "\n" + read("users.js"),
+    assert_equal read("project.js") + "\n" + read("users.js") + "\n\n\n\n",
       asset("compat.js").to_s
   end
 
   test "included dependencies are inserted after the header of the dependent file" do
-    assert_equal "# My Application\n" + read("project.js") + "\n\nhello();\n",
+    assert_equal "# My Application\n\n" + read("project.js") + "\n\nhello();\n",
       asset("included_header.js").to_s
   end
 
@@ -647,7 +647,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "including a file with a relative path" do
-    assert_equal "// Included relatively\n" + read("project.js") + "\n\nhello();\n", asset("relative/include.js").to_s
+    assert_equal "// Included relatively\n\n" + read("project.js") + "\n\nhello();\n", asset("relative/include.js").to_s
   end
 
   test "can't require files outside the load path" do
@@ -679,7 +679,7 @@ class BundledAssetTest < Sprockets::TestCase
   test "require_tree requires all descendant files in alphabetical order" do
     assert_equal(
       asset("tree/all_with_require.js").to_s,
-      asset("tree/all_with_require_tree.js").to_s
+      asset("tree/all_with_require_tree.js").to_s + "\n\n\n\n\n\n"
     )
   end
 
@@ -723,7 +723,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "require_self inserts the current file's body at the specified point" do
-    assert_equal "/* b.css */\n\nb { display: none }\n/*\n */\n.one {}\n\n\nbody {}\n.two {}\n.project {}\n", asset("require_self.css").to_s
+    assert_equal "/* b.css */\n\nb { display: none }\n/*\n\n\n\n\n\n */\n.one {}\n\n\nbody {}\n.two {}\n.project {}\n", asset("require_self.css").to_s
   end
 
   test "multiple require_self directives raises and error" do
@@ -745,7 +745,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "unknown directives are ignored" do
-    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\n//\n// = Foo\n//\n// == Examples\n//\n// Foo.bar()\n// => \"baz\"\nvar Foo;\n",
+    assert_equal "var Project = {\n  find: function(id) {\n  }\n};\n\n//\n// = Foo\n//\n// == Examples\n//\n// Foo.bar()\n// => \"baz\"\nvar Foo;\n",
       asset("documentation.js").to_s
   end
 
@@ -798,7 +798,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "multiple charset defintions are stripped from css bundle" do
-    assert_equal "@charset \"UTF-8\";\n.foo {}\n\n.bar {}\n", asset("charset.css").to_s
+    assert_equal "@charset \"UTF-8\";\n.foo {}\n\n.bar {}\n\n\n", asset("charset.css").to_s
   end
 
   test "appends missing semicolons" do

@@ -122,7 +122,7 @@ module EnvironmentTests
   end
 
   test "find index.css in directory" do
-    assert_equal ".c {}\n.d {}\n/*\n */\n\n", @env["mobile.css"].to_s
+    assert_equal ".c {}\n.d {}\n/*\n\n */\n\n", @env["mobile.css"].to_s
   end
 
   test "missing static path returns nil" do
