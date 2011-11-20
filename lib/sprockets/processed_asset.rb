@@ -17,6 +17,7 @@ module Sprockets
       build_dependency_paths(environment, context)
 
       @dependency_digest = compute_dependency_digest(environment)
+      @mtime = @dependency_paths.map(&:mtime).max
 
       elapsed_time = ((Time.now.to_f - start_time) * 1000).to_i
       environment.logger.info "Compiled #{logical_path}  (#{elapsed_time}ms)  (pid #{Process.pid})"
