@@ -497,6 +497,26 @@ class ProcessedAssetTest < Sprockets::TestCase
     assert @asset.fresh?(@env)
   end
 
+  test "asset is stale if a dependency is changed" do
+    filename = fixture_path('asset/project.js.erb')
+
+    sandbox filename do
+      File.open(filename, 'w+') { |f| f.write('a') }
+      assert @asset.stale?(@env)
+    end
+  end
+
+  test "mtime changes when dependency changes" do
+    filename = fixture_path('asset/project.js.erb')
+
+    sandbox filename do
+      File.open(filename, 'w+') { |f| f.write('a') }
+
+      asset = @env.find_asset('application.js', :bundle => false)
+      assert asset.mtime > @asset.mtime
+    end
+  end
+
   test "serializing asset to and from hash" do
     expected = @asset
     hash     = {}
