@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'sprockets'
+
+Sprockets::CLI::Parser.new.parse(*ARGV)

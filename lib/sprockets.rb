@@ -32,9 +32,14 @@ module Sprockets
   autoload :Error,                   "sprockets/errors"
   autoload :FileNotFound,            "sprockets/errors"
   autoload :Utils,                   "sprockets/utils"
+  autoload :Compiler,                "sprockets/compiler"
 
   module Cache
     autoload :FileStore, "sprockets/cache/file_store"
+  end
+
+  module CLI
+    autoload :Parser,    "sprockets/cli/parser"
   end
 
   # Extend Sprockets module to provide global registry
