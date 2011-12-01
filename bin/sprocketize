@@ -2,4 +2,4 @@
 
 require 'sprockets'
 
-Sprockets::CLI::Parser.new.parse(*ARGV)
+Sprockets::CLI.new(*ARGV).run
