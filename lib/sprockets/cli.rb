@@ -13,6 +13,8 @@ module Sprockets
 
     def compile
       env = Sprockets::Environment.new(@root)
+      env.js_compressor = expand_js_compressor(@local_options[:js_compressor])
+      env.css_compressor = expand_css_compressor(@local_options[:css_compressor])
       (@paths + (@global_options[:paths] || Set.new)).each {|p| env.append_path(p)}
 
       assets = local_options[:assets].map {|a| realpath(a).to_s}
@@ -51,7 +53,9 @@ module Sprockets
           :digest => (source[:digest].nil? ? target[:digest] : source[:digest]),
           :manifest => (source[:manifest].nil? ? target[:manifest] : source[:manifest]),
           :manifest_path => (source[:manifest_path] || target[:manifest_path]),
-          :gzip => (source[:gzip].nil? ? target[:gzip] : source[:gzip])
+          :gzip => (source[:gzip].nil? ? target[:gzip] : source[:gzip]),
+          :js_compressor => source[:js_compressor] || target[:js_compressor],
+          :css_compressor => source[:css_compressor] || target[:css_compressor]
       }
     end
 
@@ -65,6 +69,9 @@ module Sprockets
         show_usage
       elsif @local_options[:assets].length == 0
         puts_error "no assets provided"
+        show_usage
+      elsif !([:closure, :uglifier, :yui, nil].include?(@local_options[:js_compressor]))
+        puts_error "unsupported javascript processor #{@local_options[:js_compressor]}"
         show_usage
       else
         @paths = Set.new
@@ -94,14 +101,36 @@ module Sprockets
 
     private
 
-    def default_global_options
-      {:paths => Set.new}
-    end
-
     def exit_if_non_existent(path)
       return if File.exists?(path)
       puts "No such file or directory #{path}"
       exit
+    end
+
+    def expand_css_compressor(sym)
+      case sym
+      when :yui
+        require 'yui/compressor'
+        YUI::CssCompressor.new
+      else
+        nil
+      end
+    end
+
+    def expand_js_compressor(sym)
+      case sym
+      when :closure
+        require 'closure-compiler'
+        Closure::Compiler.new
+      when :uglifier
+        require 'uglifier'
+        Uglifier.new
+      when :yui
+        require 'yui/compressor'
+        YUI::JavaScriptCompressor.new
+      else
+        nil
+      end
     end
 
     def parse_input(args)
@@ -139,6 +168,14 @@ module Sprockets
 
         opts.on("-s", "--save", "Add given parameters to #{SPROCKETS_FILE}") do |dir|
           input[:save] = true
+        end
+
+        opts.on("-j [COMPRESSOR]", "--compress-javascripts [=COMPRESSOR]", "") do |compressor|
+          input[:js_compressor] = (compressor || 'closure').to_sym
+        end
+
+        opts.on("-c", "--compress-stylesheets", "Compress all stylesheets with the YUI CSS compressor.") do
+          input[:css_compressor] = :yui
         end
 
         opts.on_tail("-h", "--help", "Show this help message.") do
@@ -184,6 +221,8 @@ module Sprockets
 
       options[:assets] = options[:assets].to_set
       options[:paths] = options[:paths].to_set if options[:paths].respond_to?(:to_set)
+      options[:js_compressor] = options[:js_compressor].to_sym unless options[:js_compressor].nil?
+      options[:css_compressor] = options[:css_compressor].to_sym unless options[:css_compressor].nil?
 
       options
     end
@@ -192,7 +231,7 @@ module Sprockets
       path = Pathname.new(path)
       return path.realpath if path.absolute?
 
-      Pathname.new(@root).join(path)
+      Pathname.new(@root).join(path).realpath
     end
 
     def save_local_options
@@ -204,7 +243,9 @@ module Sprockets
           'manifest' => @local_options[:manifest] || false,
           'manifest_path' => @local_options[:manifest_path],
           'digest' => @local_options[:digest] || false,
-          'gzip' => @local_options[:gzip] || false
+          'gzip' => @local_options[:gzip] || false,
+          'js_compressor' => @local_options[:js_compressor].to_s,
+          'css_compressor' => @local_options[:css_compressor].to_s
         }, f)
       end
     end
