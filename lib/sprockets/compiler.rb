@@ -44,7 +44,7 @@ module Sprockets
       paths.each do |path|
         case path
         when Regexp
-          return true if path.match(asset)
+          return true if path.match(asset.pathname.to_s)
         when Proc
           return true if path.call(asset)
         else

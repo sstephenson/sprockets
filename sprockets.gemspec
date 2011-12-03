@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "json"
   s.add_development_dependency "rack-test"
   s.add_development_dependency "rake"
+  s.add_development_dependency "closure-compiler"
 
   s.authors = ["Sam Stephenson", "Joshua Peek"]
   s.email = ["sstephenson@gmail.com", "josh@joshpeek.com"]

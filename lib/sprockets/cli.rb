@@ -9,12 +9,12 @@ module Sprockets
   class CLI
     SPROCKETS_FILE = '.sprocksrc'
 
-    attr_accessor :local_options, :global_options, :paths
+    attr_accessor :local_options, :global_options
 
     def compile
       env = Sprockets::Environment.new(@root)
       env.js_compressor = expand_js_compressor(@local_options[:js_compressor])
-      env.css_compressor = expand_css_compressor(@local_options[:css_compressor])
+      env.css_compressor = expand_css_compressor(:yui) if @local_options[:compress_css]
       (@paths + (@global_options[:paths] || Set.new)).each {|p| env.append_path(p)}
 
       assets = local_options[:assets].map {|a| realpath(a).to_s}
@@ -29,7 +29,7 @@ module Sprockets
           :gzip => local_options[:gzip] || global_options[:gzip]
       }
 
-      compiler = Sprockets::Compiler.new(env, realpath(@local_options[:target]), [filter], options)
+      compiler = Sprockets::Compiler.new(env, realpath(@local_options[:target], true), [filter], options)
       compiler.compile
     end
 
@@ -55,8 +55,59 @@ module Sprockets
           :manifest_path => (source[:manifest_path] || target[:manifest_path]),
           :gzip => (source[:gzip].nil? ? target[:gzip] : source[:gzip]),
           :js_compressor => source[:js_compressor] || target[:js_compressor],
-          :css_compressor => source[:css_compressor] || target[:css_compressor]
+          :compress_css => source[:compress_css].nil? ? target[:compress_css] : source[:compress_css]
       }
+    end
+
+    def parser
+      OptionParser.new do |opts|
+        opts.banner = "Usage: sprocketize [options] output_directory filename [filename ...]"
+
+        opts.on("-a DIRECTORY", "--asset-root=DIRECTORY", "Assets root path.") do |dir|
+          exit_if_non_existent(dir)
+          @input[:root] = realpath(dir)
+        end
+
+        opts.on("-I DIRECTORY", "--include-dir=DIRECTORY", "Adds the directory to the Sprockets load path.") do |dir|
+          exit_if_non_existent(dir)
+          @input[:paths] << dir
+        end
+
+        opts.on("-d", "--digest", "Incorporates a MD5 digest into all filenames.") do
+          @input[:digest] = true
+        end
+
+        opts.on("-m [DIRECTORY]", "--manifest [=DIRECTORY]", "Writes a manifest for the assets. If no directory is specified the manifest will be written to the output directory.") do |dir|
+          @input[:manifest] = true
+          @input[:manifest_path] = dir
+        end
+
+        opts.on("-g", "--gzip", "Also create a compressed version of all Stylesheets and Javascripts.") do |dir|
+          @input[:gzip] = true
+        end
+
+        opts.on("-s", "--save", "Add given parameters to #{SPROCKETS_FILE}") do |dir|
+          @input[:save] = true
+        end
+
+        opts.on("-j [COMPRESSOR]", "--compress-javascripts [=COMPRESSOR]", "Compress all Javascript using either closure, yui or uglifier. If no compiler is specified closure will be used.") do |compressor|
+          @input[:js_compressor] = (compressor || 'closure').to_sym
+        end
+
+        opts.on("-c", "--compress-stylesheets", "Compress all Stylesheets with the YUI CSS compressor.") do
+          @input[:compress_css] = true
+        end
+
+        opts.on_tail("-h", "--help", "Show this help message.") do
+          show_usage
+          exit
+        end
+
+        opts.on_tail("-v", "--version", "Show version.") do
+          show_version
+          exit
+        end
+      end
     end
 
     def puts_error(message)
@@ -103,14 +154,14 @@ module Sprockets
 
     def exit_if_non_existent(path)
       return if File.exists?(path)
-      puts "No such file or directory #{path}"
+      puts_error "No such file or directory #{path}"
       exit
     end
 
     def expand_css_compressor(sym)
       case sym
       when :yui
-        require 'yui/compressor'
+        load_gem('yui/compressor', 'yui-compressor')
         YUI::CssCompressor.new
       else
         nil
@@ -120,80 +171,26 @@ module Sprockets
     def expand_js_compressor(sym)
       case sym
       when :closure
-        require 'closure-compiler'
+        load_gem('closure-compiler')
         Closure::Compiler.new
       when :uglifier
-        require 'uglifier'
+        load_gem('uglifier')
         Uglifier.new
       when :yui
-        require 'yui/compressor'
+        load_gem('yui/compressor', 'yui-compressor')
         YUI::JavaScriptCompressor.new
       else
         nil
       end
     end
 
-    def parse_input(args)
-      input = {
-        :root => Pathname.new('.'),
-        :paths => Set.new,
-        :assets => []
-      }
-
-      parser = OptionParser.new do |opts|
-        opts.banner = "Usage: sprocketize [options] output_directory filename [filename ...]"
-
-        opts.on("-a DIRECTORY", "--asset-root=DIRECTORY", "Assets root path.") do |dir|
-          exit_if_non_existent(dir)
-          input[:root] = realpath(dir)
-        end
-
-        opts.on("-I DIRECTORY", "--include-dir=DIRECTORY", "Adds the directory to the Sprockets load path.") do |dir|
-          exit_if_non_existent(dir)
-          input[:paths] << dir
-        end
-
-        opts.on("-d", "--digest", "Incorporates a MD5 digest into all filenames.") do
-          input[:digest] = true
-        end
-
-        opts.on("-m [DIRECTORY]", "--manifest [=DIRECTORY]", "Writes a manifest for the assets. If no directory is specified the manifest will be written to the output directory.") do |dir|
-          input[:manifest] = true
-          input[:manifest_path] = dir
-        end
-
-        opts.on("-g", "--gzip", "Also create a compressed version of all Stylesheets and Javascripts.") do |dir|
-          input[:gzip] = true
-        end
-
-        opts.on("-s", "--save", "Add given parameters to #{SPROCKETS_FILE}") do |dir|
-          input[:save] = true
-        end
-
-        opts.on("-j [COMPRESSOR]", "--compress-javascripts [=COMPRESSOR]", "") do |compressor|
-          input[:js_compressor] = (compressor || 'closure').to_sym
-        end
-
-        opts.on("-c", "--compress-stylesheets", "Compress all stylesheets with the YUI CSS compressor.") do
-          input[:css_compressor] = :yui
-        end
-
-        opts.on_tail("-h", "--help", "Show this help message.") do
-          show_usage
-          exit
-        end
-
-        opts.on_tail("-v", "--version", "Show version.") do
-          show_version
-          exit
-        end
+    def load_gem(require_path, gem_name = nil)
+      begin
+        require require_path
+      rescue LoadError
+        puts_error "required gem #{gem_name || require_path} not installed. please run `gem install #{gem_name || require_path}` to install it."
+        exit
       end
-
-      parser.order(args) {|a| input[:assets] << a}
-      input[:target] = input[:assets].shift
-      input[:assets] = input[:assets].to_set
-
-      input
     end
 
     def load_global_options
@@ -219,19 +216,34 @@ module Sprockets
         options[key.to_sym] = value
       end
 
-      options[:assets] = options[:assets].to_set
+      options[:assets] = options[:assets].to_set if options[:assets].respond_to?(:to_set)
       options[:paths] = options[:paths].to_set if options[:paths].respond_to?(:to_set)
       options[:js_compressor] = options[:js_compressor].to_sym unless options[:js_compressor].nil?
-      options[:css_compressor] = options[:css_compressor].to_sym unless options[:css_compressor].nil?
 
       options
     end
 
-    def realpath(path)
-      path = Pathname.new(path)
-      return path.realpath if path.absolute?
+    def parse_input(args)
+      @input = {
+        :root => Pathname.new('.'),
+        :paths => Set.new,
+        :assets => []
+      }
 
-      Pathname.new(@root).join(path).realpath
+      parser.order(args) {|a| @input[:assets] << a}
+      @input[:target] = @input[:assets].shift
+      @input[:assets] = @input[:assets].to_set
+
+      @input
+    end
+
+    def realpath(path, create = false)
+      path = Pathname.new(path)
+      path = Pathname.new(@root).join(path) unless path.absolute?
+
+      FileUtils.mkdir_p(path) if create
+
+      path.realpath
     end
 
     def save_local_options
@@ -244,8 +256,8 @@ module Sprockets
           'manifest_path' => @local_options[:manifest_path],
           'digest' => @local_options[:digest] || false,
           'gzip' => @local_options[:gzip] || false,
-          'js_compressor' => @local_options[:js_compressor].to_s,
-          'css_compressor' => @local_options[:css_compressor].to_s
+          'js_compressor' => @local_options[:js_compressor],
+          'compress_css' => @local_options[:compress_css] || false
         }, f)
       end
     end

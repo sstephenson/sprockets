@@ -27,6 +27,11 @@ class Sprockets::TestCase < Test::Unit::TestCase
     File.join(FIXTURE_ROOT, path)
   end
 
+  def rmdir(path)
+    Dir[File.join(path, '*')].each {|p| File.file?(p) ? FileUtils.rm_rf(p) : rmdir(p)}
+    Dir.rmdir(path)
+  end
+
   def sandbox(*paths)
     backup_paths = paths.select { |path| File.exist?(path) }
     remove_paths = paths.select { |path| !File.exist?(path) }
@@ -48,7 +53,7 @@ class Sprockets::TestCase < Test::Unit::TestCase
 
       remove_paths.each do |path|
         if File.exist?(path)
-          FileUtils.rm_rf(path)
+          File.file?(path) ? FileUtils.rm_rf(path) : rmdir(path)
         end
 
         assert !File.exist?(path)
