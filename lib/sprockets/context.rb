@@ -11,7 +11,7 @@ module Sprockets
   # helpers by injecting them into `Environment#context_class`. Do not
   # mix them into `Context` directly.
   #
-  #     environment.instance_eval do
+  #     environment.context_class.class_eval do
   #       include MyHelper
   #       def asset_url; end
   #     end
