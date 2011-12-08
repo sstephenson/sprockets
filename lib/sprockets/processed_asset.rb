@@ -94,27 +94,31 @@ module Sprockets
 
     private
       def build_required_assets(environment, context)
-        @required_assets = []
-        required_assets_cache = {}
+        @required_assets = resolve_dependencies(environment, context._required_paths + [pathname.to_s]) -
+          resolve_dependencies(environment, context._stubbed_assets.to_a)
+      end
 
-        (context._required_paths + [pathname.to_s]).each do |path|
+      def resolve_dependencies(environment, paths)
+        assets = []
+        cache  = {}
+
+        paths.each do |path|
           if path == self.pathname.to_s
-            unless required_assets_cache[self]
-              required_assets_cache[self] = true
-              @required_assets << self
+            unless cache[self]
+              cache[self] = true
+              assets << self
             end
           elsif asset = environment.find_asset(path, :bundle => false)
             asset.required_assets.each do |asset_dependency|
-              unless required_assets_cache[asset_dependency]
-                required_assets_cache[asset_dependency] = true
-                @required_assets << asset_dependency
+              unless cache[asset_dependency]
+                cache[asset_dependency] = true
+                assets << asset_dependency
               end
             end
           end
         end
 
-        required_assets_cache.clear
-        required_assets_cache = nil
+        assets
       end
 
       def build_dependency_paths(environment, context)

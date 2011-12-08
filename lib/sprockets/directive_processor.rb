@@ -340,6 +340,18 @@ module Sprockets
         context.depend_on_asset(path)
       end
 
+      # Allows dependency to be excluded from the asset bundle.
+      #
+      # The `path` must be a valid asset and may or may not already
+      # be part of the bundle. Once stubbed, it is blacklisted and
+      # can't be brought back by any other `require`.
+      #
+      #     //= stub "jquery"
+      #
+      def process_stub_directive(path)
+        context.stub_asset(path)
+      end
+
       # Enable Sprockets 1.x compat mode.
       #
       # Makes it possible to use the same JavaScript source

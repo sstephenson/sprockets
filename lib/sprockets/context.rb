@@ -22,7 +22,8 @@ module Sprockets
   # assets. See `DirectiveProcessor` for an example of this.
   class Context
     attr_reader :environment, :pathname
-    attr_reader :_required_paths, :_dependency_paths, :_dependency_assets
+    attr_reader :_required_paths, :_stubbed_assets
+    attr_reader :_dependency_paths, :_dependency_assets
     attr_writer :__LINE__
 
     def initialize(environment, logical_path, pathname)
@@ -32,6 +33,7 @@ module Sprockets
       @__LINE__     = nil
 
       @_required_paths    = []
+      @_stubbed_assets    = Set.new
       @_dependency_paths  = Set.new
       @_dependency_assets = Set.new([pathname.to_s])
     end
@@ -140,6 +142,14 @@ module Sprockets
       pathname = resolve(path, :content_type => :self)
       depend_on_asset(pathname)
       @_required_paths << pathname.to_s
+      nil
+    end
+
+    # `stub_asset` blacklists `path` from being included in the bundle.
+    # `path` must be an asset which may or may not already be included
+    # in the bundle.
+    def stub_asset(path)
+      @_stubbed_assets << resolve(path, :content_type => :self).to_s
       nil
     end
 

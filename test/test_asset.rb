@@ -732,6 +732,14 @@ class BundledAssetTest < Sprockets::TestCase
     end
   end
 
+  test "stub single dependency" do
+    assert_equal "var jQuery.UI = {};\n\n\n", asset("stub/skip_jquery").to_s
+  end
+
+  test "stub dependency tree" do
+    assert_equal "var Foo = {};\n\n\n\n", asset("stub/application").to_s
+  end
+
   test "circular require raises an error" do
     assert_raise(Sprockets::CircularDependencyError) do
       asset("circle/a.js")
