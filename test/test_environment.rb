@@ -197,7 +197,10 @@ module EnvironmentTests
     assert paths.include?("coffee/index.js")
     assert !paths.include?("coffee")
 
-    assert filenames.any? { |p| p =~ /application.js.coffee/ }
+    assert filenames.include?("application.js.coffee")
+    assert filenames.include?("coffee/foo.coffee")
+    assert filenames.include?("coffee/index.js")
+    assert !filenames.include?("coffee")
   end
 
   test "each logical path enumerator" do

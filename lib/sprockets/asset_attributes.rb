@@ -32,12 +32,16 @@ module Sprockets
     # shaddowed in the path, but is required relatively, its logical
     # path will be incorrect.
     def logical_path
+      path = relative_path
+      path = engine_extensions.inject(path) { |p, ext| p.sub(ext, '') }
+      path = "#{path}#{engine_format_extension}" unless format_extension
+      path
+    end
+
+    # Returns path relative to the root_path
+    def relative_path
       if root_path = environment.paths.detect { |path| pathname.to_s[path] }
-        path = pathname.to_s.sub("#{root_path}/", '')
-        path = pathname.relative_path_from(Pathname.new(root_path)).to_s
-        path = engine_extensions.inject(path) { |p, ext| p.sub(ext, '') }
-        path = "#{path}#{engine_format_extension}" unless format_extension
-        path
+        pathname.relative_path_from(Pathname.new(root_path)).to_s
       else
         raise FileOutsidePaths, "#{pathname} isn't in paths: #{environment.paths.join(', ')}"
       end

@@ -214,8 +214,10 @@ module Sprockets
       return to_enum(__method__) unless block_given?
       files = {}
       each_file do |filename|
-        logical_path = attributes_for(filename).logical_path
-        yield logical_path, filename.to_s unless files[logical_path]
+        attributes = attributes_for(filename)
+        logical_path = attributes.logical_path
+        relative_path = attributes.relative_path
+        yield logical_path, relative_path unless files[logical_path]
         files[logical_path] = true
       end
       nil
