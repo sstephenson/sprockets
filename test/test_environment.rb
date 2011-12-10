@@ -184,8 +184,10 @@ module EnvironmentTests
 
   test "iterate over each logical path" do
     paths = []
-    @env.each_logical_path do |logical_path|
+    filenames = []
+    @env.each_logical_path do |logical_path, original_filename|
       paths << logical_path
+      filenames << original_filename
     end
     assert_equal 29, paths.length
     assert_equal paths.size, paths.uniq.size, "has duplicates"
@@ -194,6 +196,8 @@ module EnvironmentTests
     assert paths.include?("coffee/foo.js")
     assert paths.include?("coffee/index.js")
     assert !paths.include?("coffee")
+
+    assert filenames.any? { |p| p =~ /application.js.coffee/ }
   end
 
   test "each logical path enumerator" do
