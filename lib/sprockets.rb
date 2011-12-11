@@ -32,6 +32,9 @@ module Sprockets
   autoload :Error,                   "sprockets/errors"
   autoload :FileNotFound,            "sprockets/errors"
   autoload :Utils,                   "sprockets/utils"
+  autoload :Compiler,                "sprockets/compiler"
+
+  autoload :CLI,                     "sprockets/cli"
 
   module Cache
     autoload :FileStore, "sprockets/cache/file_store"

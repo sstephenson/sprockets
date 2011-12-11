@@ -1,0 +1,12 @@
+--- 
+target: ../compiled
+paths: 
+- ..
+assets: 
+- cli_sprockets.js
+manifest: false
+manifest_path: 
+digest: false
+gzip: false
+js_compressor: 
+compress_css: true
