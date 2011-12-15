@@ -210,11 +210,13 @@ module Sprockets
       nil
     end
 
-    def each_logical_path
-      return to_enum(__method__) unless block_given?
+    def each_logical_path(*args)
+      return to_enum(__method__, *args) unless block_given?
+      filters = args.flatten
       files = {}
       each_file do |filename|
         logical_path = attributes_for(filename).logical_path
+        next unless matches_filter(filters, logical_path.to_s)
         yield logical_path unless files[logical_path]
         files[logical_path] = true
       end
@@ -268,6 +270,27 @@ module Sprockets
         yield
       ensure
         Thread.current[:sprockets_circular_calls] = nil if reset
+      end
+
+      def matches_filter(filters, filename)
+        return true if filters.empty?
+
+        # If filename is an index file, retest with alias
+        if File.basename(filename)[/[^\.]+/, 0] == 'index'
+          if matches_filter(filters, filename.sub(/\/index\./, '.'))
+            return true
+          end
+        end
+
+        filters.any? do |filter|
+          if filter.is_a?(Regexp)
+            filter.match(filename)
+          elsif filter.respond_to?(:call)
+            filter.call(filename)
+          else
+            File.fnmatch(filter.to_s, filename)
+          end
+        end
       end
   end
 end

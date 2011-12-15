@@ -6,6 +6,7 @@ module Sprockets
   autoload :Engines,                 "sprockets/engines"
   autoload :Environment,             "sprockets/environment"
   autoload :Index,                   "sprockets/index"
+  autoload :Manifest,                "sprockets/manifest"
 
   # Assets
   autoload :Asset,                   "sprockets/asset"

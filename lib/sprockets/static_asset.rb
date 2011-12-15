@@ -23,6 +23,8 @@ module Sprockets
       # Gzip contents if filename has '.gz'
       options[:compress] ||= File.extname(filename) == '.gz'
 
+      FileUtils.mkdir_p File.dirname(filename)
+
       if options[:compress]
         # Open file and run it through `Zlib`
         pathname.open('rb') do |rd|

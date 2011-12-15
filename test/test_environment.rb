@@ -201,6 +201,59 @@ module EnvironmentTests
     assert_equal 29, enum.to_a.length
   end
 
+  test "iterate over each logical path matching fnmatch filters" do
+    paths = []
+    @env.each_logical_path("*.js") do |logical_path|
+      paths << logical_path
+    end
+
+    assert paths.include?("application.js")
+    assert paths.include?("coffee/foo.js")
+    assert !paths.include?("gallery.css")
+  end
+
+  test "iterate over each logical path matches index files" do
+    paths = []
+    @env.each_logical_path("coffee.js") do |logical_path|
+      paths << logical_path
+    end
+    assert paths.include?("coffee/index.js")
+  end
+
+  test "each logical path enumerator matching fnmatch filters" do
+    paths = []
+    enum = @env.each_logical_path("*.js")
+    enum.to_a.each do |logical_path|
+      paths << logical_path
+    end
+
+    assert paths.include?("application.js")
+    assert paths.include?("coffee/foo.js")
+    assert !paths.include?("gallery.css")
+  end
+
+  test "iterate over each logical path matching regexp filters" do
+    paths = []
+    @env.each_logical_path(/.*\.js/) do |logical_path|
+      paths << logical_path
+    end
+
+    assert paths.include?("application.js")
+    assert paths.include?("coffee/foo.js")
+    assert !paths.include?("gallery.css")
+  end
+
+  test "iterate over each logical path matching proc filters" do
+    paths = []
+    @env.each_logical_path(proc { |fn| File.extname(fn) == '.js' }) do |logical_path|
+      paths << logical_path
+    end
+
+    assert paths.include?("application.js")
+    assert paths.include?("coffee/foo.js")
+    assert !paths.include?("gallery.css")
+  end
+
   test "CoffeeScript files are compiled in a closure" do
     script = @env["coffee"].to_s
     assert_equal "undefined", ExecJS.exec(script)

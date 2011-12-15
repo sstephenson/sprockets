@@ -20,7 +20,7 @@ end
 $dir_entires_calls = nil
 class << Dir
   alias_method :original_entries, :entries
-  def entries(dirname)
+  def entries(dirname, *args)
     if $dir_entires_calls
       $dir_entires_calls[dirname.to_s] ||= 0
       $dir_entires_calls[dirname.to_s] += 1
@@ -30,7 +30,7 @@ class << Dir
         warn caller.join("\n")
       end
     end
-    original_entries(dirname)
+    original_entries(dirname, *args)
   end
 end
 
