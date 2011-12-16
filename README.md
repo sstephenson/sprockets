@@ -356,7 +356,8 @@ submit a pull request.
 
 **2.2.0** (Unreleased)
 
-* Add rake/sprocketstask.
+* Added `sprockets` command line utility.
+* Added rake/sprocketstask.
 * Added json manifest log of compiled assets.
 * Added `stub` directive that allows you to exclude files from the bundle.
 * Added per environment external encoding (Environment#default_external_encoding). Defaults to UTF-8. Fixes issues where LANG is not set correctly and Rubys default external is set to ASCII.

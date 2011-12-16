@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.description = "Sprockets is a Rack-based asset packaging system that concatenates and serves JavaScript, CoffeeScript, CSS, LESS, Sass, and SCSS."
 
   s.files = Dir["README.md", "LICENSE", "lib/**/*.rb"]
+  s.executables = ["sprockets"]
 
   s.add_dependency "hike", "~> 1.2"
   s.add_dependency "multi_json", "~> 1.0"
