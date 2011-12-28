@@ -27,6 +27,7 @@ module Sprockets
       @digest_class      = environment.digest_class
       @version           = environment.version
       @mime_types        = environment.mime_types
+      @default_encodings = environment.default_encodings
       @engines           = environment.engines
       @preprocessors     = environment.preprocessors
       @postprocessors    = environment.postprocessors

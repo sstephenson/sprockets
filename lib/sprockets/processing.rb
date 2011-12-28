@@ -9,12 +9,24 @@ module Sprockets
   module Processing
     include Engines, Mime
 
-    # Register a new mime type.
-    def register_mime_type(mime_type, ext)
+    # Register a new mime type with optional default encoding.
+    def register_mime_type(mime_type, ext, options = {})
       # Overrides the global behavior to expire the index
       expire_index!
       @trail.append_extension(ext)
       super
+    end
+
+    # Returns the assigned encoding for the supplied extension, if
+    # it exists.
+    def default_encoding_for_extension(ext)
+      # Overrides the global behavior to fallback on the default
+      # external encoding, if it exists.
+      encoding = super
+      if respond_to?(:default_external_encoding)
+        encoding ||= default_external_encoding
+      end
+      encoding
     end
 
     # Returns an `Array` of format extension `String`s.

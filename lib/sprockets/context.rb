@@ -178,8 +178,9 @@ module Sprockets
       if options[:data]
         result = options[:data]
       else
-        if environment.respond_to?(:default_external_encoding)
-          result = Sprockets::Utils.read_unicode(pathname, environment.default_external_encoding)
+        encoding = environment.default_encoding_for_extension(pathname.extname)
+        if encoding
+          result = Sprockets::Utils.read_unicode(pathname, encoding)
         else
           result = Sprockets::Utils.read_unicode(pathname)
         end
