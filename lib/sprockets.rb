@@ -23,6 +23,10 @@ module Sprockets
   autoload :JstProcessor,            "sprockets/jst_processor"
   autoload :Processor,               "sprockets/processor"
   autoload :SafetyColons,            "sprockets/safety_colons"
+  autoload :SassCacheStore,          "sprockets/sass_cache_store"
+  autoload :SassImporter,            "sprockets/sass_importer"
+  autoload :SassTemplate,            "sprockets/sass_template"
+  autoload :ScssTemplate,            "sprockets/scss_template"
 
   # Internal utilities
   autoload :ArgumentError,           "sprockets/errors"
@@ -55,8 +59,8 @@ module Sprockets
 
   # CSS engines
   register_engine '.less',   Tilt::LessTemplate
-  register_engine '.sass',   Tilt::SassTemplate
-  register_engine '.scss',   Tilt::ScssTemplate
+  register_engine '.sass',   SassTemplate
+  register_engine '.scss',   ScssTemplate
 
   # Other
   register_engine '.erb',    Tilt::ERBTemplate

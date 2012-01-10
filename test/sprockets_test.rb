@@ -24,7 +24,11 @@ class Sprockets::TestCase < Test::Unit::TestCase
   end
 
   def fixture_path(path)
-    File.join(FIXTURE_ROOT, path)
+    if path.match(FIXTURE_ROOT)
+      path
+    else
+      File.join(FIXTURE_ROOT, path)
+    end
   end
 
   def sandbox(*paths)

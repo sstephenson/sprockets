@@ -101,7 +101,7 @@ module Sprockets
 
         raise FileNotFound, "couldn't find file '#{path}'"
       else
-        environment.resolve(path, :base_path => self.pathname.dirname, &block)
+        environment.resolve(path, {:base_path => self.pathname.dirname}.merge(options), &block)
       end
     end
 
