@@ -36,6 +36,7 @@ module Sprockets
       @version = ''
 
       @mime_types        = {}
+      @default_encodings = {}
       @engines           = Sprockets.engines
       @preprocessors     = Hash.new { |h, k| h[k] = [] }
       @postprocessors    = Hash.new { |h, k| h[k] = [] }
