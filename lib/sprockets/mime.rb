@@ -2,6 +2,9 @@ require 'rack/mime'
 
 module Sprockets
   module Mime
+    # Mime types that should be opened with BINARY encoding.
+    BINARY_MIME_TYPES = [ %r{^(image|audio|video)/} ]
+
     # Returns a `Hash` of registered mime types registered on the
     # environment and those part of `Rack::Mime`.
     #
@@ -29,6 +32,14 @@ module Sprockets
     def register_mime_type(mime_type, ext)
       ext = Sprockets::Utils.normalize_extension(ext)
       @mime_types[ext] = mime_type
+    end
+
+    # Returns the correct encoding for a given mime type, while falling
+    # back on the default external encoding, if it exists.
+    def encoding_for_mime_type(type)
+      encoding = "BINARY" if BINARY_MIME_TYPES.any? { |matcher| matcher === type }
+      encoding ||= default_external_encoding if respond_to?(:default_external_encoding)
+      encoding
     end
   end
 
