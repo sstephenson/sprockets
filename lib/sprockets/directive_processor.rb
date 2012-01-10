@@ -260,7 +260,7 @@ module Sprockets
           root = pathname.dirname.join(path).expand_path
 
           unless (stats = stat(root)) && stats.directory?
-            raise ArgumentError, "require_tree argument must be a directory"
+            raise ArgumentError, "require_directory argument must be a directory"
           end
 
           context.depend_on(root)
