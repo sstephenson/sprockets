@@ -180,6 +180,11 @@ class TestServer < Sprockets::TestCase
     get "/assets/%E6%97%A5%E6%9C%AC%E8%AA%9E.js"
     assert_equal "var japanese = \"日本語\";\n", last_response.body
   end
+  
+  test "serve strange pathname (-82edb07.js)" do
+    get "/assets/-82edb07.js?body=1"
+    assert_equal 200, last_response.status
+  end
 
   test "illegal require outside load path" do
     get "/assets/../config/passwd"
