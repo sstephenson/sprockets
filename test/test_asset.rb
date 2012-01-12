@@ -722,6 +722,13 @@ class BundledAssetTest < Sprockets::TestCase
     )
   end
 
+  test "require_tree respects the exclude keyword" do
+    assert_equal(
+      "var c;\n",
+      asset("tree/with_excludes.js").to_s
+    )
+  end
+
   test "require_self inserts the current file's body at the specified point" do
     assert_equal "/* b.css */\n\nb { display: none }\n/*\n\n\n\n\n\n */\n.one {}\n\n\nbody {}\n.two {}\n.project {}\n", asset("require_self.css").to_s
   end

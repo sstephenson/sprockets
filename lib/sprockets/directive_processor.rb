@@ -284,7 +284,11 @@ module Sprockets
       #
       #     //= require_tree "./public"
       #
-      def process_require_tree_directive(path = ".")
+      # it is also possible to exclude files individually:
+      #
+      #     //= require_tree "." exclude: "file1", "file2"
+      #
+      def process_require_tree_directive(path = ".", *args)
         if relative?(path)
           root = pathname.dirname.join(path).expand_path
 
@@ -292,10 +296,12 @@ module Sprockets
             raise ArgumentError, "require_tree argument must be a directory"
           end
 
+          exclude = args.shift == 'exclude:' ? args.map {|arg| arg.sub(/,$/, '')} : []
+
           context.depend_on(root)
 
           each_entry(root) do |pathname|
-            if pathname.to_s == self.file
+            if pathname.to_s == self.file or exclude.include?(pathname.basename(pathname.extname).to_s)
               next
             elsif stat(pathname).directory?
               context.depend_on(pathname)
