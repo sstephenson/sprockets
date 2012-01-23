@@ -203,6 +203,7 @@ module Sprockets
           headers["Cache-Control"]  = "public"
           headers["Last-Modified"]  = asset.mtime.httpdate
           headers["ETag"]           = etag(asset)
+          headers["Date"]           = Time.now.httpdate
 
           # If the request url contains a fingerprint, set a long
           # expires on the response
