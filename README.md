@@ -354,7 +354,7 @@ submit a pull request.
 
 ## Version History ##
 
-**2.3.0** (Unreleased)
+**2.3.0** (January 16, 2012)
 
 * Added special Sass importer that automatically tracks any `@import`ed files.
 
