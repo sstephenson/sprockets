@@ -184,11 +184,14 @@ module Sprockets
       paths = []
       entries(root).sort.each do |filename|
         path = root.join(filename)
-        paths << path
+        path_info = stat(path)
+        if path_info
+          paths << path
 
-        if stat(path).directory?
-          each_entry(path) do |subpath|
-            paths << subpath
+          if path_info.directory?
+            each_entry(path) do |subpath|
+              paths << subpath
+            end
           end
         end
       end
