@@ -25,11 +25,6 @@ module Sprockets
 
       msg = "Served asset #{env['PATH_INFO']} -"
 
-      # URLs containing a `".."` are rejected for security reasons.
-      if forbidden_request?(env)
-        return forbidden_response
-      end
-
       # Mark session as "skipped" so no `Set-Cookie` header is set
       env['rack.session.options'] ||= {}
       env['rack.session.options'][:defer] = true
@@ -37,6 +32,11 @@ module Sprockets
 
       # Extract the path from everything after the leading slash
       path = unescape(env['PATH_INFO'].to_s.sub(/^\//, ''))
+
+      # URLs containing a `".."` are rejected for security reasons.
+      if forbidden_request?(path)
+        return forbidden_response
+      end
 
       # Strip fingerprint
       if fingerprint = path_fingerprint(path)
@@ -85,12 +85,12 @@ module Sprockets
     end
 
     private
-      def forbidden_request?(env)
+      def forbidden_request?(path)
         # Prevent access to files elsewhere on the file system
         #
         #     http://example.org/assets/../../../etc/passwd
         #
-        env["PATH_INFO"].include?("..")
+        path.include?("..")
       end
 
       # Returns a 403 Forbidden response tuple

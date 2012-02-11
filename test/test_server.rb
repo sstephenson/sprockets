@@ -185,6 +185,9 @@ class TestServer < Sprockets::TestCase
   test "illegal require outside load path" do
     get "/assets/../config/passwd"
     assert_equal 403, last_response.status
+
+    get "/assets/%2e%2e/config/passwd"
+    assert_equal 403, last_response.status
   end
 
   test "add new source to tree" do
