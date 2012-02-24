@@ -53,7 +53,7 @@ module Sprockets
     #     # => 'application'
     #
     def logical_path
-      @logical_path[/^([^.]+)/, 0]
+      @logical_path.chomp(File.extname(@logical_path))
     end
 
     # Returns content type of file

@@ -25,6 +25,17 @@ class TestContext < Sprockets::TestCase
     }, YAML.load(json))
   end
 
+  test "source file properties are exposed in context when path contains periods" do
+    json = @env["properties.with.periods.js"].to_s.chomp.chop
+    assert_equal({
+      'pathname'     => fixture_path("context/properties.with.periods.js.erb"),
+      '__FILE__'     => fixture_path("context/properties.with.periods.js.erb"),
+      'root_path'    => fixture_path("context"),
+      'logical_path' => "properties.with.periods",
+      'content_type' => "application/javascript"
+    }, YAML.load(json))
+  end
+
   test "extend context" do
     @env.context_class.class_eval do
       def datauri(path)
