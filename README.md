@@ -336,6 +336,13 @@ source file before any subsequent `require` or `include` directives.
 including it in the bundle. This is useful when you need to expire an
 asset's cache in response to a change in another file.
 
+### The `stub` Directive ###
+
+`stub` *path* allows dependency to be excluded from the asset bundle.
+The *path* must be a valid asset and may or may not already be part 
+of the bundle. Once stubbed, it is blacklisted and can't be brought 
+back by any other `require`.
+
 # Development #
 
 ## Contributing ##
