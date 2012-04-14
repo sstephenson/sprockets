@@ -67,17 +67,20 @@ module Sprockets
         ok_response(asset, env)
       end
     rescue Exception => e
-      logger.error "Error compiling asset #{path}:"
+      logger.error "#{msg} 500 Internal Server Error"
       logger.error "#{e.class.name}: #{e.message}"
+      logger.error "#{e.backtrace.join("\n")}"
+
+      unless full_exception
+        return internal_server_error_response
+      end
 
       case content_type_of(path)
       when "application/javascript"
         # Re-throw JavaScript asset exceptions to the browser
-        logger.info "#{msg} 500 Internal Server Error\n\n"
         return javascript_exception_response(e)
       when "text/css"
         # Display CSS asset exceptions in the browser
-        logger.info "#{msg} 500 Internal Server Error\n\n"
         return css_exception_response(e)
       else
         raise
@@ -91,6 +94,11 @@ module Sprockets
         #     http://example.org/assets/../../../etc/passwd
         #
         path.include?("..")
+      end
+
+      # Returns a 500 Internal Server Error if full_exception is true
+      def internal_server_error_response
+        [ 500, { "Content-Type" => "text/plain", "Content-Length" => "21" }, [ "Error compiling asset" ] ]
       end
 
       # Returns a 403 Forbidden response tuple

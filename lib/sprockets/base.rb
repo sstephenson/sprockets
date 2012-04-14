@@ -73,6 +73,9 @@ module Sprockets
     # Get and set `Logger` instance.
     attr_accessor :logger
 
+    # Show exception backtrace, it's true by default
+    attr_accessor :full_exception
+
     # Get `Context` class.
     #
     # This class maybe mutated and mixed in with custom helpers.
