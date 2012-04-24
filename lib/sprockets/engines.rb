@@ -28,12 +28,12 @@ module Sprockets
   #     Sprockets.register_engine '.sass', SassTemplate
   #
   module Engines
-    # Returns an `Array` of `Engine`s registered on the
-    # `Environment`. If an `ext` argument is supplied, the `Engine`
-    # register under that extension will be returned.
+    # Returns a `Hash` of `Engine`s registered on the `Environment`.
+    # If an `ext` argument is supplied, the `Engine` associated with
+    # that extension will be returned.
     #
     #     environment.engines
-    #     # => [CoffeeScriptTemplate, SassTemplate, ...]
+    #     # => {".coffee" => CoffeeScriptTemplate, ".sass" => SassTemplate, ...}
     #
     #     environment.engines('.coffee')
     #     # => CoffeeScriptTemplate
