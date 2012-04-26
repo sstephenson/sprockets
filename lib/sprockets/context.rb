@@ -50,7 +50,7 @@ module Sprockets
     # Returns logical path without any file extensions.
     #
     #     'app/javascripts/application.js'
-    #     # => 'application'
+    #     # => 'app/javascripts/application'
     #
     def logical_path
       @logical_path.chomp(File.extname(@logical_path))
