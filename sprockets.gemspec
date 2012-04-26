@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.executables = ["sprockets"]
 
   s.add_dependency "hike", "~> 1.2"
-  s.add_dependency "multi_json", "~> 1.0"
+  s.add_dependency "multi_json", "~> 1.3.0"
   s.add_dependency "rack", "~> 1.0"
   s.add_dependency "tilt", ["~> 1.1", "!= 1.3.0"]
 

@@ -186,7 +186,7 @@ module Sprockets
       def save
         FileUtils.mkdir_p dir
         File.open(path, 'w') do |f|
-          f.write MultiJson.encode(@data)
+          f.write MultiJson.dump(@data)
         end
       end
 
