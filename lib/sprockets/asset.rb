@@ -145,6 +145,7 @@ module Sprockets
         if options[:compress]
           # Run contents through `Zlib`
           gz = Zlib::GzipWriter.new(f, Zlib::BEST_COMPRESSION)
+          gz.mtime = mtime.to_i
           gz.write to_s
           gz.close
         else

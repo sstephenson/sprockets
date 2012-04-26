@@ -30,6 +30,7 @@ module Sprockets
         pathname.open('rb') do |rd|
           File.open("#{filename}+", 'wb') do |wr|
             gz = Zlib::GzipWriter.new(wr, Zlib::BEST_COMPRESSION)
+            gz.mtime = mtime.to_i
             buf = ""
             while rd.read(16384, buf)
               gz.write(buf)
