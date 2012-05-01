@@ -84,7 +84,7 @@ module Sprockets
     #
     def compile(*args)
       paths = environment.each_logical_path(*args).to_a +
-        args.flatten.select { |fn| Pathname.new(fn).absolute? }
+        args.flatten.select { |fn| Pathname.new(fn).absolute? if fn.is_a?(String)}
 
       paths.each do |path|
         if asset = find_asset(path)

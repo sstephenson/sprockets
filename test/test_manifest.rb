@@ -90,6 +90,26 @@ class TestManifest < Sprockets::TestCase
     assert_equal gallery_digest_path, data['assets']['gallery.css']
   end
 
+  test "compile with regex" do
+    app_digest_path = @env['application.js'].digest_path
+    gallery_digest_path = @env['gallery.css'].digest_path
+    
+    assert !File.exist?("#{@dir}/#{app_digest_path}")
+    assert !File.exist?("#{@dir}/#{gallery_digest_path}")
+
+    @manifest.compile('gallery.css', /application.js/)
+
+    assert File.exist?("#{@dir}/manifest.json")
+    assert File.exist?("#{@dir}/#{app_digest_path}")
+    assert File.exist?("#{@dir}/#{gallery_digest_path}")
+
+    data = JSON.parse(File.read(@manifest.path))
+    assert data['files'][app_digest_path]
+    assert data['files'][gallery_digest_path]
+    assert_equal app_digest_path, data['assets']['application.js']
+    assert_equal gallery_digest_path, data['assets']['gallery.css']
+  end
+
   test "recompile asset" do
     digest_path = @env['application.js'].digest_path
     filename = fixture_path('default/application.js.coffee')
