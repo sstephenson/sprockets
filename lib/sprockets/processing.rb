@@ -65,7 +65,7 @@ module Sprockets
     #
     # A block can be passed for to create a shorthand processor.
     #
-    #     register_preprocessor :my_processor do |context, data|
+    #     register_preprocessor 'text/css', :my_processor do |context, data|
     #       data.gsub(...)
     #     end
     #
@@ -87,7 +87,7 @@ module Sprockets
     #
     # A block can be passed for to create a shorthand processor.
     #
-    #     register_postprocessor :my_processor do |context, data|
+    #     register_postprocessor 'text/css', :my_processor do |context, data|
     #       data.gsub(...)
     #     end
     #
