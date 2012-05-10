@@ -577,6 +577,26 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", body
   end
 
+  test "mtime is based on required assets" do
+    required_asset = fixture_path('asset/dependencies/b.js')
+
+    sandbox required_asset do
+      mtime = Time.now + 1
+      File.utime mtime, mtime, required_asset
+      assert_equal mtime.to_i, asset('required_assets.js').mtime.to_i
+    end
+  end
+
+  test "mtime is based on dependency paths" do
+    asset_dependency = fixture_path('asset/dependencies/b.js')
+
+    sandbox asset_dependency do
+      mtime = Time.now + 1
+      File.utime mtime, mtime, asset_dependency
+      assert_equal mtime.to_i, asset('dependency_paths.js').mtime.to_i
+    end
+  end
+
   test "requiring the same file multiple times has no effect" do
     assert_equal read("project.js")+"\n\n\n", asset("multiple.js").to_s
   end
