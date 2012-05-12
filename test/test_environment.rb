@@ -589,4 +589,10 @@ class TestIndex < Sprockets::TestCase
     assert env.engines[".foo"]
     assert_nil index.engines[".foo"]
   end
+
+  test "expiring index raises an error" do
+    assert_raises TypeError do
+      @env.index.expire_index!
+    end
+  end
 end

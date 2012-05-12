@@ -77,11 +77,10 @@ module Sprockets
       end
     end
 
-    protected
-      def expire_index!
-        # Clear digest to be recomputed
-        @digest = nil
-        @assets = {}
-      end
+    def expire_index!
+      # Clear digest to be recomputed
+      @digest = nil
+      @assets = {}
+    end
   end
 end

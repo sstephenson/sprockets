@@ -73,12 +73,13 @@ module Sprockets
       end
     end
 
+    # Index is immutable, any methods that try to clear the cache
+    # should bomb.
+    def expire_index!
+      raise TypeError, "can't modify immutable index"
+    end
+
     protected
-      # Index is immutable, any methods that try to clear the cache
-      # should bomb.
-      def expire_index!
-        raise TypeError, "can't modify immutable index"
-      end
 
       # Cache asset building in memory and in persisted cache.
       def build_asset(path, pathname, options)
