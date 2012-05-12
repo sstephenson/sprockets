@@ -323,12 +323,12 @@ module Sprockets
         ">"
     end
 
-    protected
-      # Clear index after mutating state. Must be implemented by the subclass.
-      def expire_index!
-        raise NotImplementedError
-      end
+    # Clear index after mutating state. Must be implemented by the subclass.
+    def expire_index!
+      raise NotImplementedError
+    end
 
+    protected
       def build_asset(logical_path, pathname, options)
         pathname = Pathname.new(pathname)
 
