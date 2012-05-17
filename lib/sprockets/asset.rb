@@ -135,24 +135,23 @@ module Sprockets
     end
 
     # Save asset to disk.
-    def write_to(filename, options = {})
+    def write_to(filename, options = {}, &block)
       # Gzip contents if filename has '.gz'
       options[:compress] ||= File.extname(filename) == '.gz'
 
       FileUtils.mkdir_p File.dirname(filename)
 
       File.open("#{filename}+", 'wb') do |f|
-        if options[:compress]
-          # Run contents through `Zlib`
-          gz = Zlib::GzipWriter.new(f, Zlib::BEST_COMPRESSION)
-          gz.mtime = mtime.to_i
-          gz.write to_s
-          gz.close
+        writer = options[:compress] ? Zlib::GzipWriter.new(f, Zlib::BEST_COMPRESSION) : f
+        writer.mtime = mtime.to_i if writer.respond_to?(:mtime=)
+        
+        if block
+          writer.write block.call(logical_path, to_s)
         else
-          # Write out as is
-          f.write to_s
-          f.close
+          writer.write to_s
         end
+        
+        writer.close
       end
 
       # Atomic write

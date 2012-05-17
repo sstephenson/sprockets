@@ -54,6 +54,23 @@ class TestManifest < Sprockets::TestCase
     assert_equal 226, data['files'][digest_path]['size']
     assert_equal digest_path, data['assets']['application.js']
   end
+  
+  test "compile asset with block" do
+    digest_path = @env['application.js'].digest_path
+
+    assert !File.exist?("#{@dir}/#{digest_path}")
+
+    @manifest.compile('application.js') { |filename, source| source }
+
+    assert File.exist?("#{@dir}/manifest.json")
+    assert File.exist?("#{@dir}/#{digest_path}")
+
+    data = JSON.parse(File.read(@manifest.path))
+    assert data['files'][digest_path]
+    assert_equal "application.js", data['files'][digest_path]['logical_path']
+    assert_equal 226, data['files'][digest_path]['size']
+    assert_equal digest_path, data['assets']['application.js']
+  end
 
   test "compile asset with absolute path" do
     digest_path = @env['application.js'].digest_path
