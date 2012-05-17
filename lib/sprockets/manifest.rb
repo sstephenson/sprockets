@@ -82,7 +82,7 @@ module Sprockets
     #
     #   compile("application.js")
     #
-    def compile(*args)
+    def compile(*args, &block)
       paths = environment.each_logical_path(*args).to_a +
         args.flatten.select { |fn| Pathname.new(fn).absolute? if fn.is_a?(String)}
 
@@ -102,7 +102,7 @@ module Sprockets
             logger.debug "Skipping #{target}, already exists"
           else
             logger.info "Writing #{target}"
-            asset.write_to target
+            asset.write_to target, {}, &block
           end
 
           save
