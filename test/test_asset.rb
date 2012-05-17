@@ -65,7 +65,19 @@ module AssetTests
       assert !File.exist?(target)
     end
   end
-
+  
+  test "write to file using block" do
+    target = fixture_path("asset/tmp.min.js")
+    begin
+      @asset.write_to(target) { |filename, source| source }
+      assert File.exist?(target)
+      assert_equal @asset.mtime, File.mtime(target)
+    ensure
+      FileUtils.rm(target) if File.exist?(target)
+      assert !File.exist?(target)
+    end
+  end
+  
   test "write to gzipped file" do
     target = fixture_path('asset/tmp.js.gz')
     begin
