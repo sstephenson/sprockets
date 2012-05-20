@@ -8,6 +8,30 @@ class TestContext < Sprockets::TestCase
     @env.append_path(fixture_path('context'))
   end
 
+  test "resolve logical path" do
+    logical_path = "bar.js"
+    path = File.join(fixture_path('context'), logical_path)
+    pathname = Pathname.new(path)
+    context = @env.context_class.new(@env, logical_path, pathname)
+
+    # absolute paths
+    assert_equal context.resolve(path), pathname
+    assert_raise Sprockets::FileNotFound do
+      context.resolve File.join(fixture_path('context'), "wrongname")
+    end
+
+    # with options
+    assert_equal context.resolve(logical_path, :content_type => "application/javascript"), pathname
+    assert_raise Sprockets::ContentTypeMismatch do
+      context.resolve logical_path, :content_type => "text/css"
+    end
+    assert_equal context.resolve(logical_path, :content_type => :self), pathname
+
+    # logical paths
+    assert_equal context.resolve(logical_path), pathname
+    assert_raise(Sprockets::FileNotFound) { context.resolve("wrongname") }
+  end
+
   test "context environment is indexed" do
     instances = @env["environment.js"].to_s.split("\n")
     assert_match "Sprockets::Index", instances[0]
