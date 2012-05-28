@@ -65,7 +65,7 @@ module Sprockets
     #     //= require "foo"
     #
     DIRECTIVE_PATTERN = /
-      ^ [\s*\/]* = \s* (\w+.*?) (\*\/)? $
+      ^ [\s*#\/]* = \s* (\w+.*?) (\*\/)? $
     /x
 
     attr_reader :pathname
