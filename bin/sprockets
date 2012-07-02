@@ -40,7 +40,7 @@ OptionParser.new do |opts|
     environment.js_compressor = eval(js_compressor).new
   end
 
-  opts.on("-c ENGINE", "--css_compressor=ENGINE", "Adds css compression") do |css_compressor|
+  opts.on("-c ENGINE", "--css_compressor=ENGINE", "Adds stylesheet compression") do |css_compressor|
     environment.css_compressor = eval(css_compressor).new
   end
 
