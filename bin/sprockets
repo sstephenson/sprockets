@@ -36,6 +36,14 @@ OptionParser.new do |opts|
     environment.append_path directory
   end
 
+  opts.on("-j ENGINE", "--js_compressor=ENGINE", "Adds javascript compression") do |js_compressor|
+    environment.js_compressor = eval(js_compressor).new
+  end
+
+  opts.on("-c ENGINE", "--css_compressor=ENGINE", "Adds css compression") do |css_compressor|
+    environment.css_compressor = eval(css_compressor).new
+  end
+
   opts.on("-o DIRECTORY", "--output=DIRECTORY", "Copy provided assets into DIRECTORY") do |directory|
     manifest = Sprockets::Manifest.new(environment, directory)
   end
