@@ -53,6 +53,18 @@ class TestSprockets < Sprockets::TestCase
     assert_equal "var Project = {\n  find: function(id) {\n  }\n};\nvar Users = {\n  find: function(id) {\n  }\n};\n\n\n\ndocument.on('dom:loaded', function() {\n  $('search').focus();\n});\n", output
   end
 
+  test "compile file with dependencies and js compress with uglifier" do
+    output = sprockets  '-ruglifier', "-I", fixture_path("asset"), fixture_path("asset/application.js"), '-jUglifier'
+    assert_equal 'var Project={find:function(e){}},Users={find:function(e){}};document.on("dom:loaded",function(){$("search").focus()});' + "\n", output
+  end
+
+
+  test "compile file with dependencies and css compress with YUI::CssCompressor" do
+    output = sprockets  '-ryui/compressor', "-I", fixture_path("asset"), fixture_path("asset/application.css"), '-cYUI::CssCompressor'
+    assert_equal "a{margin:0;background-position:0 0;padding:0}.classname{font-weight:normal}\n", output
+  end
+
+
   test "compile asset to output directory" do
     digest_path = @env['gallery.js'].digest_path
     output = sprockets "-I", fixture_path("default"), "-o", @dir, fixture_path("default/gallery.js")
