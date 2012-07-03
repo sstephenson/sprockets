@@ -252,6 +252,16 @@ module Sprockets
       else
         begin
           pathname = resolve(logical_path)
+
+          # If logical path is missing a mime type extension, append
+          # the absolute path extname so it has one.
+          #
+          # Ensures some consistency between finding "foo/bar" vs
+          # "foo/bar.js".
+          if File.extname(logical_path) == ""
+            expanded_logical_path = attributes_for(pathname).logical_path
+            logical_path += File.extname(expanded_logical_path)
+          end
         rescue FileNotFound
           return nil
         end

@@ -361,6 +361,11 @@ submit a pull request.
 
 ## Version History ##
 
+**2.4.4** (July 2, 2012)
+
+* Canonicalize logical path extensions
+* Check absolute paths passed to depend_on
+
 **2.4.3** (May 16, 2012)
 
 * Exposed :sprockets in sass options

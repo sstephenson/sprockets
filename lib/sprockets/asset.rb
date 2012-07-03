@@ -33,6 +33,8 @@ module Sprockets
     alias_method :bytesize, :length
 
     def initialize(environment, logical_path, pathname)
+      raise ArgumentError, "Asset logical path has no extension: #{logical_path}" if File.extname(logical_path) == ""
+
       @root         = environment.root
       @logical_path = logical_path.to_s
       @pathname     = Pathname.new(pathname)
