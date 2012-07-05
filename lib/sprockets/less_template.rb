@@ -13,7 +13,6 @@ module Sprockets
     end
 
     def prepare
-      nil
     end
 
     def evaluate(context, locals, &block)
@@ -26,7 +25,7 @@ module Sprockets
       parser = ::Less::Parser.new(options)
       parser.imports.each do |path|
         pathname = context.resolve(path) rescue nil
-        context.depend_on(path) unless path.nil?
+        context.depend_on(pathname) if pathname
       end
       parser.parse(data).to_css
     rescue ::Less::ParseError => e
