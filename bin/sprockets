@@ -36,11 +36,11 @@ OptionParser.new do |opts|
     environment.append_path directory
   end
 
-  opts.on("-js ENGINE", "--js_compressor=ENGINE", "Adds javascript compression") do |js_compressor|
+  opts.on("-j ENGINE", "--js_compressor=ENGINE", "Adds javascript compression") do |js_compressor|
     environment.js_compressor = eval(js_compressor).new
   end
 
-  opts.on("-css ENGINE", "--css_compressor=ENGINE", "Adds stylesheet compression") do |css_compressor|
+  opts.on("-s ENGINE", "--css_compressor=ENGINE", "Adds stylesheet compression") do |css_compressor|
     environment.css_compressor = eval(css_compressor).new
   end
 
