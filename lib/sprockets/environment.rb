@@ -15,6 +15,7 @@ module Sprockets
     #     env = Environment.new(Rails.root)
     #
     def initialize(root = ".")
+      @full_exception = true
       @trail = Hike::Trail.new(root)
 
       self.logger = Logger.new($stderr)
