@@ -89,14 +89,7 @@ module Sprockets
     #     unregister_preprocessor 'text/css', Sprockets::DirectiveProcessor
     #
     def unregister_preprocessor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @preprocessors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @preprocessors[mime_type].delete(klass)
+      unregister(@preprocessors, mime_type, klass)
     end
 
     # Remove Postprocessor `klass` for `mime_type`.
@@ -104,14 +97,7 @@ module Sprockets
     #     unregister_postprocessor 'text/css', Sprockets::DirectiveProcessor
     #
     def unregister_postprocessor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @postprocessors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @postprocessors[mime_type].delete(klass)
+      unregister(@postprocessors, mime_type, klass)
     end
 
     # Returns an `Array` of `Processor` classes. If a `mime_type`
@@ -227,6 +213,17 @@ module Sprockets
         end
 
         processors[mime_type].push(klass)
+      end
+
+      def unregister(processors, mime_type, klass)
+        if klass.is_a?(String) || klass.is_a?(Symbol)
+          klass = processors[mime_type].detect { |cls|
+            cls.respond_to?(:name) &&
+              cls.name == "Sprockets::Processor (#{klass})"
+          }
+        end
+
+        processors[mime_type].delete(klass)
       end
 
       def add_engine_to_trail(ext, klass)
