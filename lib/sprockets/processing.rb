@@ -137,10 +137,7 @@ module Sprockets
 
     # Return CSS compressor or nil if none is set
     def css_compressor
-      bundle_processors('text/css').detect { |klass|
-        klass.respond_to?(:name) &&
-          klass.name == 'Sprockets::Processor (css_compressor)'
-      }
+      find_compressor('text/css', :css_compressor)
     end
 
     # Assign a compressor to run on `text/css` assets.
@@ -152,10 +149,7 @@ module Sprockets
 
     # Return JS compressor or nil if none is set
     def js_compressor
-      bundle_processors('application/javascript').detect { |klass|
-        klass.respond_to?(:name) &&
-          klass.name == 'Sprockets::Processor (js_compressor)'
-      }
+      find_compressor('application/javascript', :js_compressor)
     end
 
     # Assign a compressor to run on `application/javascript` assets.
@@ -195,6 +189,13 @@ module Sprockets
         end
 
         processors[mime_type].delete(klass)
+      end
+
+      def find_compressor(mime_type, name)
+        bundle_processors(mime_type).detect { |klass|
+          klass.respond_to?(:name) &&
+            klass.name == "Sprockets::Processor (#{name})"
+        }
       end
 
       def assign_compressor(mime_type, klass, compressor)
