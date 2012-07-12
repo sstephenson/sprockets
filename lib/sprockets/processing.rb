@@ -31,11 +31,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def preprocessors(mime_type = nil)
-      if mime_type
-        @preprocessors[mime_type].dup
-      else
-        deep_copy_hash(@preprocessors)
-      end
+      find_processor(@preprocessors, mime_type)
     end
 
     # Returns an `Array` of `Processor` classes. If a `mime_type`
@@ -47,11 +43,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def postprocessors(mime_type = nil)
-      if mime_type
-        @postprocessors[mime_type].dup
-      else
-        deep_copy_hash(@postprocessors)
-      end
+      find_processor(@postprocessors, mime_type)
     end
 
     # Deprecated alias for `register_preprocessor`.
@@ -217,6 +209,14 @@ module Sprockets
     end
 
     private
+      def find_processor(processors, mime_type = nil)
+        if mime_type
+          processors[mime_type].dup
+        else
+          deep_copy_hash(processors)
+        end
+      end
+
       def register(processors, mime_type, klass, &block)
         if block_given?
           name  = klass.to_s
