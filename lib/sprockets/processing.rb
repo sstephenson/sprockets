@@ -70,15 +70,7 @@ module Sprockets
     #     end
     #
     def register_preprocessor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @preprocessors[mime_type].push(klass)
+      register(@preprocessors, mime_type, klass, &block)
     end
 
     # Registers a new Postprocessor `klass` for `mime_type`.
@@ -92,15 +84,7 @@ module Sprockets
     #     end
     #
     def register_postprocessor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @postprocessors[mime_type].push(klass)
+      register(@postprocessors, mime_type, klass, &block)
     end
 
     # Deprecated alias for `unregister_preprocessor`.
@@ -233,6 +217,18 @@ module Sprockets
     end
 
     private
+      def register(processors, mime_type, klass, &block)
+        if block_given?
+          name  = klass.to_s
+          klass = Class.new(Processor) do
+            @name      = name
+            @processor = block
+          end
+        end
+
+        processors[mime_type].push(klass)
+      end
+
       def add_engine_to_trail(ext, klass)
         @trail.append_extension(ext.to_s)
 
