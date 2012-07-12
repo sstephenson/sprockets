@@ -31,7 +31,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def preprocessors(mime_type = nil)
-      find_processor(@preprocessors, mime_type)
+      find_processors(@preprocessors, mime_type)
     end
 
     # Returns an `Array` of `Processor` classes. If a `mime_type`
@@ -43,7 +43,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def postprocessors(mime_type = nil)
-      find_processor(@postprocessors, mime_type)
+      find_processors(@postprocessors, mime_type)
     end
 
     # Deprecated alias for `register_preprocessor`.
@@ -110,11 +110,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def bundle_processors(mime_type = nil)
-      if mime_type
-        @bundle_processors[mime_type].dup
-      else
-        deep_copy_hash(@bundle_processors)
-      end
+      find_processors(@bundle_processors, mime_type)
     end
 
     # Registers a new Bundle Processor `klass` for `mime_type`.
@@ -128,15 +124,7 @@ module Sprockets
     #     end
     #
     def register_bundle_processor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @bundle_processors[mime_type].push(klass)
+      register(@bundle_processors, mime_type, klass, &block)
     end
 
     # Remove Bundle Processor `klass` for `mime_type`.
@@ -144,14 +132,7 @@ module Sprockets
     #     unregister_bundle_processor 'text/css', Sprockets::CharsetNormalizer
     #
     def unregister_bundle_processor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @bundle_processors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @bundle_processors[mime_type].delete(klass)
+      unregister(@bundle_processors, mime_type, klass)
     end
 
     # Return CSS compressor or nil if none is set
@@ -195,7 +176,7 @@ module Sprockets
     end
 
     private
-      def find_processor(processors, mime_type = nil)
+      def find_processors(processors, mime_type = nil)
         if mime_type
           processors[mime_type].dup
         else
