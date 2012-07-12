@@ -147,12 +147,7 @@ module Sprockets
     #
     # The compressor object must respond to `compress` or `compile`.
     def css_compressor=(compressor)
-      unregister_bundle_processor 'text/css', :css_compressor
-      return unless compressor
-
-      register_bundle_processor 'text/css', :css_compressor do |context, data|
-        compressor.compress(data)
-      end
+      assign_compressor("text/css", :css_compressor, compressor)
     end
 
     # Return JS compressor or nil if none is set
@@ -167,12 +162,7 @@ module Sprockets
     #
     # The compressor object must respond to `compress` or `compile`.
     def js_compressor=(compressor)
-      unregister_bundle_processor 'application/javascript', :js_compressor
-      return unless compressor
-
-      register_bundle_processor 'application/javascript', :js_compressor do |context, data|
-        compressor.compress(data)
-      end
+      assign_compressor("application/javascript", :js_compressor, compressor)
     end
 
     private
@@ -205,6 +195,15 @@ module Sprockets
         end
 
         processors[mime_type].delete(klass)
+      end
+
+      def assign_compressor(mime_type, klass, compressor)
+        unregister_bundle_processor(mime_type, klass) 
+        return unless compressor
+
+        register_bundle_processor(mime_type, klass) do |context, data|
+          compressor.compress(data)
+        end
       end
 
       def add_engine_to_trail(ext, klass)
