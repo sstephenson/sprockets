@@ -17,7 +17,9 @@ module Sprockets
             # saved as UTF-16 when we expected UTF-8.
             if !data.valid_encoding?
               raise EncodingError, "#{pathname} has a invalid " +
-                "#{data.encoding} byte sequence"
+                "#{data.encoding} byte sequence" +
+                "\nMaybe you need to put the following line in your .bashrc\n" +
+                "export LC_ALL=en_US.UTF-8"
 
             # If the file is UTF-8 and theres a BOM, strip it for safe concatenation.
             elsif data.encoding.name == "UTF-8" && data =~ UTF8_BOM_PATTERN
