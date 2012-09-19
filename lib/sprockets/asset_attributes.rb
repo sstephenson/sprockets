@@ -17,10 +17,15 @@ module Sprockets
     def search_paths
       paths = [pathname.to_s]
 
+      path_without_extensions = extensions.inject(pathname) { |p, ext| p.sub(ext, '') }
+
+      # optimization: component.json can only be nested one level deep
+      if !path_without_extensions.to_s.index('/')
+        paths << path_without_extensions.join("component.json").to_s
+      end
+
       if pathname.basename(extensions.join).to_s != 'index'
-        path_without_extensions = extensions.inject(pathname) { |p, ext| p.sub(ext, '') }
-        index_path = path_without_extensions.join("index#{extensions.join}").to_s
-        paths << index_path
+        paths << path_without_extensions.join("index#{extensions.join}").to_s
       end
 
       paths

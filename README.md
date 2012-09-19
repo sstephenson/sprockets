@@ -361,6 +361,10 @@ submit a pull request.
 
 ## Version History ##
 
+**2.6.0** (September 19, 2012)
+
+* Added bower component.json require support
+
 **2.5.0** (September 4, 2012)
 
 * Fixed Ruby 2.0 RegExp warning

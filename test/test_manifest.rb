@@ -51,7 +51,7 @@ class TestManifest < Sprockets::TestCase
     data = JSON.parse(File.read(@manifest.path))
     assert data['files'][digest_path]
     assert_equal "application.js", data['files'][digest_path]['logical_path']
-    assert_equal 226, data['files'][digest_path]['size']
+    assert_equal 237, data['files'][digest_path]['size']
     assert_equal digest_path, data['assets']['application.js']
   end
 
@@ -93,7 +93,7 @@ class TestManifest < Sprockets::TestCase
   test "compile with regex" do
     app_digest_path = @env['application.js'].digest_path
     gallery_digest_path = @env['gallery.css'].digest_path
-    
+
     assert !File.exist?("#{@dir}/#{app_digest_path}")
     assert !File.exist?("#{@dir}/#{gallery_digest_path}")
 

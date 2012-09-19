@@ -2,9 +2,9 @@ require 'sprockets_test'
 
 class TestAssetAttributes < Sprockets::TestCase
   test "search paths" do
-    assert_equal ["index.js"],
+    assert_equal ["index.js", "index/component.json"],
       pathname("index.js").search_paths
-    assert_equal ["foo.js", "foo/index.js"],
+    assert_equal ["foo.js", "foo/component.json", "foo/index.js"],
       pathname("foo.js").search_paths
     assert_equal ["foo/bar.js", "foo/bar/index.js"],
       pathname("foo/bar.js").search_paths

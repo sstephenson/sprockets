@@ -1,0 +1,8 @@
+{
+  "name": "bower",
+  "version": "1.0.0",
+  "main": "./main.js",
+  "dependencies": {
+    "jquery": "~1.7.2"
+  }
+}
