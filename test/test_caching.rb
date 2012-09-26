@@ -83,7 +83,7 @@ class TestCaching < Sprockets::TestCase
     assert !asset1.equal?(asset2)
   end
 
-  test "depedencies are cached" do
+  test "dependencies are cached" do
     env = @env1
 
     parent = env['application.js']
@@ -101,7 +101,7 @@ class TestCaching < Sprockets::TestCase
     assert child2.equal?(child1)
   end
 
-  test "proccessed and bundled assets are cached separately" do
+  test "processed and bundled assets are cached separately" do
     env = @env1
     assert_kind_of Sprockets::ProcessedAsset, env.find_asset('gallery.js', :bundle => false)
     assert_kind_of Sprockets::BundledAsset,   env.find_asset('gallery.js', :bundle => true)
@@ -109,7 +109,7 @@ class TestCaching < Sprockets::TestCase
     assert_kind_of Sprockets::BundledAsset,   env.find_asset('gallery.js', :bundle => true)
   end
 
-  test "proccessed and bundled assets are cached separately on index" do
+  test "processed and bundled assets are cached separately on index" do
     index = @env1.index
     assert_kind_of Sprockets::ProcessedAsset, index.find_asset('gallery.js', :bundle => false)
     assert_kind_of Sprockets::BundledAsset,   index.find_asset('gallery.js', :bundle => true)

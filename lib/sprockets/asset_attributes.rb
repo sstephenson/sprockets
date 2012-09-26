@@ -34,7 +34,7 @@ module Sprockets
     # Reverse guess logical path for fully expanded path.
     #
     # This has some known issues. For an example if a file is
-    # shaddowed in the path, but is required relatively, its logical
+    # shadowed in the path, but is required relatively, its logical
     # path will be incorrect.
     def logical_path
       if root_path = environment.paths.detect { |path| pathname.to_s[path] }
