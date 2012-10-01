@@ -54,7 +54,9 @@ module Sprockets
 
     # Cache `find_asset` calls
     def find_asset(path, options = {})
-      options[:bundle] = true unless options.key?(:bundle)
+      options[:bundle]  = true unless options.key?(:bundle)
+      options[:process] = true unless options.key?(:process)
+
       if asset = @assets[cache_key_for(path, options)]
         asset
       elsif asset = super

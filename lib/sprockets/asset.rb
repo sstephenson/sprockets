@@ -13,6 +13,8 @@ module Sprockets
           BundledAsset
         when 'ProcessedAsset'
           ProcessedAsset
+        when 'UnprocessedAsset'
+          UnprocessedAsset
         when 'StaticAsset'
           StaticAsset
         else

@@ -9,7 +9,7 @@ require 'tilt'
 
 module Sprockets
   class Environment < Base
-    # `Environment` should initialized with your application's root
+    # `Environment` should be initialized with your application's root
     # directory. This should be the same as your Rails or Rack root.
     #
     #     env = Environment.new(Rails.root)
@@ -67,8 +67,9 @@ module Sprockets
     # Cache `find_asset` calls
     def find_asset(path, options = {})
       options[:bundle] = true unless options.key?(:bundle)
+      options[:process] = true unless options.key?(:process)
 
-      # Ensure inmemory cached assets are still fresh on every lookup
+      # Ensure in-memory cached assets are still fresh on every lookup
       if (asset = @assets[cache_key_for(path, options)]) && asset.fresh?(self)
         asset
       elsif asset = index.find_asset(path, options)

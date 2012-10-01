@@ -10,22 +10,25 @@ module Sprockets
   class BundledAsset < Asset
     attr_reader :source
 
-    def initialize(environment, logical_path, pathname)
+    def initialize(environment, logical_path, pathname, options = {})
       super(environment, logical_path, pathname)
+      @process = options.fetch(:process, true)
 
-      @processed_asset  = environment.find_asset(pathname, :bundle => false)
-      @required_assets  = @processed_asset.required_assets
-      @dependency_paths = @processed_asset.dependency_paths
+      @asset            = environment.find_asset(pathname, :bundle => false, :process => @process)
+      @required_assets  = @asset.required_assets
+      @dependency_paths = @asset.dependency_paths
 
       @source = ""
 
       # Explode Asset into parts and gather the dependency bodies
       to_a.each { |dependency| @source << dependency.to_s }
 
-      # Run bundle processors on concatenated source
-      context = environment.context_class.new(environment, logical_path, pathname)
-      @source = context.evaluate(pathname, :data => @source,
-                  :processors => environment.bundle_processors(content_type))
+      if @process
+        # Run bundle processors on concatenated source
+        context = environment.context_class.new(environment, logical_path, pathname)
+        @source = context.evaluate(pathname, :data => @source,
+                    :processors => environment.bundle_processors(content_type))
+      end
 
       @mtime  = (to_a + @dependency_paths).map(&:mtime).max
       @length = Rack::Utils.bytesize(source)
@@ -36,10 +39,10 @@ module Sprockets
     def init_with(environment, coder)
       super
 
-      @processed_asset = environment.find_asset(pathname, :bundle => false)
-      @required_assets = @processed_asset.required_assets
+      @asset = environment.find_asset(pathname, :bundle => false)
+      @required_assets = @asset.required_assets
 
-      if @processed_asset.dependency_digest != coder['required_assets_digest']
+      if @asset.dependency_digest != coder['required_assets_digest']
         raise UnserializeError, "processed asset belongs to a stale environment"
       end
 
@@ -51,19 +54,19 @@ module Sprockets
       super
 
       coder['source'] = source
-      coder['required_assets_digest'] = @processed_asset.dependency_digest
+      coder['required_assets_digest'] = @asset.dependency_digest
     end
 
     # Get asset's own processed contents. Excludes any of its required
     # dependencies but does run any processors or engines on the
     # original file.
     def body
-      @processed_asset.source
+      @asset.source
     end
 
     # Return an `Array` of `Asset` files that are declared dependencies.
     def dependencies
-      to_a.reject { |a| a.eql?(@processed_asset) }
+      to_a.reject { |a| a.eql?(@asset) }
     end
 
     # Expand asset into an `Array` of parts.
@@ -74,7 +77,7 @@ module Sprockets
     # Checks if Asset is stale by comparing the actual mtime and
     # digest to the inmemory model.
     def fresh?(environment)
-      @processed_asset.fresh?(environment)
+      @asset.fresh?(environment)
     end
   end
 end

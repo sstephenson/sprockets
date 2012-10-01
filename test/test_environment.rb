@@ -516,6 +516,15 @@ class TestEnvironment < Sprockets::TestCase
     @env.unregister_preprocessor('application/javascript', Sprockets::DirectiveProcessor)
     assert_equal "// =require \"notfound\"\n;\n", @env["missing_require.js"].to_s
   end
+
+  test "returning unprocessed assets to find sources digest" do
+    asset_processed   = @env.find_asset 'project.js'
+    asset_unprocessed = @env.find_asset 'project.js', :process => false
+
+    assert asset_unprocessed
+    assert asset_unprocessed != asset_processed
+    assert asset_unprocessed.digest != asset_processed.digest
+  end
 end
 
 class TestIndex < Sprockets::TestCase
