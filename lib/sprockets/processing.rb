@@ -31,11 +31,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def preprocessors(mime_type = nil)
-      if mime_type
-        @preprocessors[mime_type].dup
-      else
-        deep_copy_hash(@preprocessors)
-      end
+      find_processors(@preprocessors, mime_type)
     end
 
     # Returns an `Array` of `Processor` classes. If a `mime_type`
@@ -47,11 +43,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def postprocessors(mime_type = nil)
-      if mime_type
-        @postprocessors[mime_type].dup
-      else
-        deep_copy_hash(@postprocessors)
-      end
+      find_processors(@postprocessors, mime_type)
     end
 
     # Deprecated alias for `register_preprocessor`.
@@ -70,15 +62,7 @@ module Sprockets
     #     end
     #
     def register_preprocessor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @preprocessors[mime_type].push(klass)
+      register(@preprocessors, mime_type, klass, &block)
     end
 
     # Registers a new Postprocessor `klass` for `mime_type`.
@@ -92,15 +76,7 @@ module Sprockets
     #     end
     #
     def register_postprocessor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @postprocessors[mime_type].push(klass)
+      register(@postprocessors, mime_type, klass, &block)
     end
 
     # Deprecated alias for `unregister_preprocessor`.
@@ -113,14 +89,7 @@ module Sprockets
     #     unregister_preprocessor 'text/css', Sprockets::DirectiveProcessor
     #
     def unregister_preprocessor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @preprocessors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @preprocessors[mime_type].delete(klass)
+      unregister(@preprocessors, mime_type, klass)
     end
 
     # Remove Postprocessor `klass` for `mime_type`.
@@ -128,14 +97,7 @@ module Sprockets
     #     unregister_postprocessor 'text/css', Sprockets::DirectiveProcessor
     #
     def unregister_postprocessor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @postprocessors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @postprocessors[mime_type].delete(klass)
+      unregister(@postprocessors, mime_type, klass)
     end
 
     # Returns an `Array` of `Processor` classes. If a `mime_type`
@@ -148,11 +110,7 @@ module Sprockets
     # All `Processor`s must follow the `Tilt::Template` interface. It is
     # recommended to subclass `Tilt::Template`.
     def bundle_processors(mime_type = nil)
-      if mime_type
-        @bundle_processors[mime_type].dup
-      else
-        deep_copy_hash(@bundle_processors)
-      end
+      find_processors(@bundle_processors, mime_type)
     end
 
     # Registers a new Bundle Processor `klass` for `mime_type`.
@@ -166,15 +124,7 @@ module Sprockets
     #     end
     #
     def register_bundle_processor(mime_type, klass, &block)
-      if block_given?
-        name  = klass.to_s
-        klass = Class.new(Processor) do
-          @name      = name
-          @processor = block
-        end
-      end
-
-      @bundle_processors[mime_type].push(klass)
+      register(@bundle_processors, mime_type, klass, &block)
     end
 
     # Remove Bundle Processor `klass` for `mime_type`.
@@ -182,57 +132,81 @@ module Sprockets
     #     unregister_bundle_processor 'text/css', Sprockets::CharsetNormalizer
     #
     def unregister_bundle_processor(mime_type, klass)
-      if klass.is_a?(String) || klass.is_a?(Symbol)
-        klass = @bundle_processors[mime_type].detect { |cls|
-          cls.respond_to?(:name) &&
-            cls.name == "Sprockets::Processor (#{klass})"
-        }
-      end
-
-      @bundle_processors[mime_type].delete(klass)
+      unregister(@bundle_processors, mime_type, klass)
     end
 
     # Return CSS compressor or nil if none is set
     def css_compressor
-      bundle_processors('text/css').detect { |klass|
-        klass.respond_to?(:name) &&
-          klass.name == 'Sprockets::Processor (css_compressor)'
-      }
+      find_compressor('text/css', :css_compressor)
     end
 
     # Assign a compressor to run on `text/css` assets.
     #
     # The compressor object must respond to `compress` or `compile`.
     def css_compressor=(compressor)
-      unregister_bundle_processor 'text/css', :css_compressor
-      return unless compressor
-
-      register_bundle_processor 'text/css', :css_compressor do |context, data|
-        compressor.compress(data)
-      end
+      assign_compressor("text/css", :css_compressor, compressor)
     end
 
     # Return JS compressor or nil if none is set
     def js_compressor
-      bundle_processors('application/javascript').detect { |klass|
-        klass.respond_to?(:name) &&
-          klass.name == 'Sprockets::Processor (js_compressor)'
-      }
+      find_compressor('application/javascript', :js_compressor)
     end
 
     # Assign a compressor to run on `application/javascript` assets.
     #
     # The compressor object must respond to `compress` or `compile`.
     def js_compressor=(compressor)
-      unregister_bundle_processor 'application/javascript', :js_compressor
-      return unless compressor
-
-      register_bundle_processor 'application/javascript', :js_compressor do |context, data|
-        compressor.compress(data)
-      end
+      assign_compressor("application/javascript", :js_compressor, compressor)
     end
 
     private
+      def find_processors(processors, mime_type = nil)
+        if mime_type
+          processors[mime_type].dup
+        else
+          deep_copy_hash(processors)
+        end
+      end
+
+      def register(processors, mime_type, klass, &block)
+        if block_given?
+          name  = klass.to_s
+          klass = Class.new(Processor) do
+            @name      = name
+            @processor = block
+          end
+        end
+
+        processors[mime_type].push(klass)
+      end
+
+      def unregister(processors, mime_type, klass)
+        if klass.is_a?(String) || klass.is_a?(Symbol)
+          klass = processors[mime_type].detect { |cls|
+            cls.respond_to?(:name) &&
+              cls.name == "Sprockets::Processor (#{klass})"
+          }
+        end
+
+        processors[mime_type].delete(klass)
+      end
+
+      def find_compressor(mime_type, name)
+        bundle_processors(mime_type).detect { |klass|
+          klass.respond_to?(:name) &&
+            klass.name == "Sprockets::Processor (#{name})"
+        }
+      end
+
+      def assign_compressor(mime_type, klass, compressor)
+        unregister_bundle_processor(mime_type, klass) 
+        return unless compressor
+
+        register_bundle_processor(mime_type, klass) do |context, data|
+          compressor.compress(data)
+        end
+      end
+
       def add_engine_to_trail(ext, klass)
         @trail.append_extension(ext.to_s)
 
