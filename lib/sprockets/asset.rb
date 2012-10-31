@@ -153,7 +153,6 @@ module Sprockets
         else
           # Write out as is
           f.write to_s
-          f.close
         end
       end
 
