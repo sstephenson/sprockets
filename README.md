@@ -128,6 +128,16 @@ Call `to_s` on the resulting asset to access its contents, `length` to
 get its length in bytes, `mtime` to query its last-modified time, and
 `pathname` to get its full path on the filesystem.
 
+### Compressing Asssets ###
+
+To compress assets you have to set the `js_compressor` and
+`css_compressor` members of the sprockets environment to instances of
+compressing engines like YUI or Uglifier.
+
+    env = Sprockets::Environment.new PATH
+    env.js_compressor = Uglifier.new mangle: true
+    env.css_compressor = YUI::CssCompressor.new
+
 # Using Engines #
 
 Asset source files can be written in another language, like SCSS or
