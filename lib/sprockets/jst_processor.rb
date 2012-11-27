@@ -16,9 +16,7 @@ module Sprockets
 
     def evaluate(scope, locals, &block)
       <<-JST
-(function() {
-  #{namespace} || (#{namespace} = {});
-  #{namespace}[#{scope.logical_path.inspect}] = #{indent(data)};
+(function() { #{namespace} || (#{namespace} = {}); #{namespace}[#{scope.logical_path.inspect}] = #{indent(data)};
 }).call(this);
       JST
     end
