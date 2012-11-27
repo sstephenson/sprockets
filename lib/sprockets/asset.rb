@@ -236,7 +236,7 @@ module Sprockets
           return false
         end
 
-        # Compare dependency mime to the actual mtime. If the
+        # Compare dependency mtime to the actual mtime. If the
         # dependency mtime is newer than the actual mtime, the file
         # hasn't changed since we created this `Asset` instance.
         #
