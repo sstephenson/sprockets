@@ -39,12 +39,13 @@ module Sprockets
       end
 
       # Strip fingerprint
+      original_path = path
       if fingerprint = path_fingerprint(path)
         path = path.sub("-#{fingerprint}", '')
       end
 
       # Look up the asset.
-      asset = find_asset(path, :bundle => !body_only?(env))
+      asset = find_asset(path, :bundle => !body_only?(env)) || find_asset(original_path, :bundle => !body_only?(env))
 
       # `find_asset` returns nil if the asset doesn't exist
       if asset.nil?
