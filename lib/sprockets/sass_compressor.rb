@@ -16,7 +16,7 @@ module Sprockets
     end
 
     def evaluate(context, locals, &block)
-      Sass::Engine.new(data, {
+      ::Sass::Engine.new(data, {
         :syntax => :scss,
         :cache => false,
         :read_cache => false,
