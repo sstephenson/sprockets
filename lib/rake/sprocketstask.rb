@@ -65,7 +65,14 @@ module Rake
     #
     #   t.assets = %w( application.js jquery.js application.css )
     #
-    attr_accessor :assets
+    def assets
+      if !@assets.is_a?(Array) && @assets.respond_to?(:call)
+        @assets = @assets.call
+      else
+        @assets
+      end
+    end
+    attr_writer :assets
 
     # Number of old assets to keep.
     attr_accessor :keep
