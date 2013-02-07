@@ -12,12 +12,9 @@ unless ARGV.delete("--noenv")
 end
 
 filenames = []
-environment = Sprockets::Environment.new(Dir.pwd)
 manifest = nil
-
-(ENV['SPROCKETS_PATH'] || "").split(File::PATH_SEPARATOR).each do |path|
-  environment.append_path path
-end
+includes = []
+output_dir = ''
 
 OptionParser.new do |opts|
   opts.summary_width = 28
@@ -33,11 +30,11 @@ OptionParser.new do |opts|
   end
 
   opts.on("-I DIRECTORY", "--include=DIRECTORY", "Adds the directory to the Sprockets load path") do |directory|
-    environment.append_path directory
+    includes << directory
   end
 
   opts.on("-o DIRECTORY", "--output=DIRECTORY", "Copy provided assets into DIRECTORY") do |directory|
-    manifest = Sprockets::Manifest.new(environment, directory)
+    output_dir = directory
   end
 
   opts.on("--css-compressor=COMPRESSOR", "Use CSS compressor") do |compressor|
@@ -72,13 +69,22 @@ OptionParser.new do |opts|
   end
 end
 
+environment = Sprockets::Environment.new(Dir.pwd)
+
+includes.each { |directory| environment.append_path directory }
+
+(ENV['SPROCKETS_PATH'] || "").split(File::PATH_SEPARATOR).each do |path|
+  environment.append_path path
+end
+
 if environment.paths.empty?
   warn "No load paths given"
   warn "Usage: sprockets -Ijavascripts/ filename"
   exit 1
 end
 
-if manifest
+if !output_dir.empty?
+  manifest = Sprockets::Manifest.new(environment, output_dir)
   manifest.compile(filenames)
 elsif filenames.length == 1
   puts environment.find_asset(filenames.first).to_s
