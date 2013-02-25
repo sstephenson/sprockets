@@ -154,6 +154,18 @@ class TestManifest < Sprockets::TestCase
     assert_equal gallery_digest_path, data['assets']['gallery.css']
   end
 
+  test "compress assets" do
+    gallery_digest_path = @env['gallery.css'].digest_path
+    app_digest_path = @env['application.js'].digest_path
+    img_digest_path = @env['blank.gif'].digest_path
+
+    @manifest.compile('gallery.css', 'application.js', 'blank.gif')
+
+    assert File.exist?("#{@dir}/#{gallery_digest_path}.gz")
+    assert File.exist?("#{@dir}/#{app_digest_path}.gz")
+    assert !File.exist?("#{@dir}/#{img_digest_path}.gz")
+  end
+
   test "recompile asset" do
     digest_path = @env['application.js'].digest_path
     filename = fixture_path('default/application.js.coffee')
@@ -193,6 +205,7 @@ class TestManifest < Sprockets::TestCase
 
     @manifest.compile('application.js')
     assert File.exist?("#{@dir}/#{digest_path}")
+    assert File.exist?("#{@dir}/#{digest_path}.gz")
 
     data = JSON.parse(File.read(@manifest.path))
     assert data['files'][digest_path]
@@ -201,6 +214,7 @@ class TestManifest < Sprockets::TestCase
     @manifest.remove(digest_path)
 
     assert !File.exist?("#{@dir}/#{digest_path}")
+    assert !File.exist?("#{@dir}/#{digest_path}.gz")
 
     data = JSON.parse(File.read(@manifest.path))
     assert !data['files'][digest_path]

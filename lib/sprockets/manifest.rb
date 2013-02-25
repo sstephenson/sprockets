@@ -132,6 +132,7 @@ module Sprockets
           else
             logger.info "Writing #{target}"
             asset.write_to target
+            asset.write_to "#{target}.gz" if target =~ /\.(js|css)$/
           end
 
           save
@@ -147,6 +148,7 @@ module Sprockets
     #
     def remove(filename)
       path = File.join(dir, filename)
+      gzip = "#{path}.gz"
       logical_path = files[filename]['logical_path']
 
       if assets[logical_path] == filename
@@ -155,6 +157,7 @@ module Sprockets
 
       files.delete(filename)
       FileUtils.rm(path) if File.exist?(path)
+      FileUtils.rm(gzip) if File.exist?(gzip)
 
       save
 
