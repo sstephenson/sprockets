@@ -25,11 +25,6 @@ module Sprockets
 
       msg = "Served asset #{env['PATH_INFO']} -"
 
-      # Mark session as "skipped" so no `Set-Cookie` header is set
-      env['rack.session.options'] ||= {}
-      env['rack.session.options'][:defer] = true
-      env['rack.session.options'][:skip] = true
-
       # Extract the path from everything after the leading slash
       path = unescape(env['PATH_INFO'].to_s.sub(/^\//, ''))
 
@@ -45,6 +40,8 @@ module Sprockets
 
       # Look up the asset.
       asset = find_asset(path, :bundle => !body_only?(env))
+      # Do not change session options when pass the request to other routes.
+      skip_session(env) unless asset.nil?
 
       # `find_asset` returns nil if the asset doesn't exist
       if asset.nil?
@@ -242,6 +239,13 @@ module Sprockets
       # Helper to quote the assets digest for use as an ETag.
       def etag(asset)
         %("#{asset.digest}")
+      end
+
+      # Mark session as "skipped" so no `Set-Cookie` header is set
+      def skip_session(env)
+        env['rack.session.options'] ||= {}
+        env['rack.session.options'][:defer] = true
+        env['rack.session.options'][:skip] = true
       end
   end
 end
