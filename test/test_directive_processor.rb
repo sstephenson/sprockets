@@ -108,6 +108,19 @@ class DirectiveProcessorTest < Sprockets::TestCase
   end
 end
 
+if "".respond_to?(:encoding)
+  class TestDirectiveProcessorEncoding < Sprockets::TestCase
+    def setup
+      @env = Sprockets::Environment.new
+      @env.append_path(fixture_path('context'))
+    end
+
+    test "encoding of evaluated string" do
+      assert_equal Encoding::UTF_8, @env['utf8.js'].source.encoding
+    end
+  end
+end
+
 class TestCustomDirectiveProcessor < Sprockets::TestCase
   def setup
     @env = Sprockets::Environment.new

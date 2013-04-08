@@ -536,14 +536,14 @@ class TestEnvironment < Sprockets::TestCase
 
     sandbox filename do
       File.open(filename, 'w') { |f| f.puts "-->" }
-      assert_raises(ExecJS::ProgramError) do
+      assert_raises(ExecJS::RuntimeError) do
         @env["tmp.js"].to_s
       end
 
       File.open(filename, 'w') { |f| f.puts "->" }
       time = Time.now + 60
       File.utime(time, time, filename)
-      assert_equal "(function() {\n\n  (function() {});\n\n}).call(this);\n", @env["tmp.js"].to_s
+      assert_equal "(function() {\n  (function() {});\n\n}).call(this);\n", @env["tmp.js"].to_s
     end
   end
 

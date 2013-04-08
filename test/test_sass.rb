@@ -104,18 +104,6 @@ li {
     EOS
   end
 
-  test "@import prefers partial over fullname" do
-    filename = fixture_path('sass/test.scss')
-    partial, other = fixture_path('sass/_partial.scss'), fixture_path('sass/partial.scss')
-
-    sandbox filename, partial, other do
-      File.open(filename, 'w') { |f| f.write "@import 'partial';" }
-      File.open(partial, 'w')  { |f| f.write ".partial { background: red; };" }
-      File.open(other, 'w')    { |f| f.write ".partial { background: blue; };" }
-      assert_equal ".partial {\n  background: red; }\n", render(filename)
-    end
-  end
-
   test "@import sass non-partial from scss" do
     assert_equal <<-EOS, render('sass/import_nonpartial.scss')
 .content-navigation {

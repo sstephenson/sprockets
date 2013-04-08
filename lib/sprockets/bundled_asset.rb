@@ -17,10 +17,8 @@ module Sprockets
       @required_assets  = @processed_asset.required_assets
       @dependency_paths = @processed_asset.dependency_paths
 
-      @source = ""
-
       # Explode Asset into parts and gather the dependency bodies
-      to_a.each { |dependency| @source << dependency.to_s }
+      @source = to_a.map { |dependency| dependency.to_s }.join
 
       # Run bundle processors on concatenated source
       context = environment.context_class.new(environment, logical_path, pathname)

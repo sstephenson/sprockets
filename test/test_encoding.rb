@@ -11,7 +11,7 @@ class EncodingTest < Sprockets::TestCase
     test "read ASCII asset" do
       data = @env['ascii.js'].to_s
       assert_equal "var foo = \"bar\";\n", data
-      assert_equal Encoding.find('ASCII'), data.encoding
+      assert_equal Encoding.find('UTF-8'), data.encoding
     end
 
     test "read UTF-8 asset" do
