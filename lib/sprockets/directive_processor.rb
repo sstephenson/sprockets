@@ -91,7 +91,11 @@ module Sprockets
     def evaluate(context, locals, &block)
       @context = context
 
-      @result = ""
+      @result = if context.environment.respond_to?(:default_external_encoding) #encoding aware ruby?
+                  "".encode(context.environment.default_external_encoding)
+                else
+                  ""
+                end
       @has_written_body = false
 
       process_directives
