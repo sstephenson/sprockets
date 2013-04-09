@@ -39,7 +39,8 @@ module Sprockets
       @logical_path = logical_path.to_s
       @pathname     = Pathname.new(pathname)
       @content_type = environment.content_type_of(pathname)
-      @mtime        = environment.stat(pathname).mtime
+      # drop precision to 1 second, same pattern followed elsewhere
+      @mtime        = Time.at(environment.stat(pathname).mtime.to_i)
       @length       = environment.stat(pathname).size
       @digest       = environment.file_digest(pathname).hexdigest
     end
@@ -58,8 +59,7 @@ module Sprockets
       end
 
       if mtime = coder['mtime']
-        # Parse time string
-        @mtime = Time.parse(mtime)
+        @mtime = Time.at(mtime)
       end
 
       if length = coder['length']
@@ -74,7 +74,7 @@ module Sprockets
       coder['logical_path'] = logical_path
       coder['pathname']     = relativize_root_path(pathname).to_s
       coder['content_type'] = content_type
-      coder['mtime']        = mtime.iso8601
+      coder['mtime']        = mtime.to_i
       coder['length']       = length
       coder['digest']       = digest
     end
@@ -244,7 +244,11 @@ module Sprockets
         # stale. Many deployment environments may recopy or recheckout
         # assets on each deploy. In this case the mtime would be the
         # time of deploy rather than modified time.
-        if mtime >= stat.mtime
+        #
+        # Note: to_i is used in eql? and write_to we assume fidelity of 1 second
+        #  if people save files more frequently than 1 second sprockets may
+        #  not pick it up, by design
+        if mtime.to_i >= stat.mtime.to_i
           return true
         end
 
