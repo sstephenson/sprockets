@@ -16,7 +16,7 @@ module Sprockets
       if obj = environment.cache_get("sass/#{key}")
         return unless obj[:version] == version
         return unless obj[:sha] == sha
-        obj[:obj]
+        obj[:contents]
       else
         nil
       end
