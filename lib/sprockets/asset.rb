@@ -1,5 +1,6 @@
 require 'time'
 require 'set'
+require 'zopfli'
 
 module Sprockets
   # `Asset` is the base class for `BundledAsset` and `StaticAsset`.
@@ -145,11 +146,8 @@ module Sprockets
 
       File.open("#{filename}+", 'wb') do |f|
         if options[:compress]
-          # Run contents through `Zlib`
-          gz = Zlib::GzipWriter.new(f, Zlib::BEST_COMPRESSION)
-          gz.mtime = mtime.to_i
-          gz.write to_s
-          gz.close
+          # Write zopfli deflated  contents
+          f.write Zopfli.deflate(to_s)
         else
           # Write out as is
           f.write to_s

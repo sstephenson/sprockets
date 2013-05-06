@@ -1,6 +1,6 @@
 require 'sprockets/asset'
 require 'fileutils'
-require 'zlib'
+require 'zopfli'
 
 module Sprockets
   # `StaticAsset`s are used for files that are served verbatim without
@@ -26,16 +26,10 @@ module Sprockets
       FileUtils.mkdir_p File.dirname(filename)
 
       if options[:compress]
-        # Open file and run it through `Zlib`
+        # Open file and run it through `zopfli`
         pathname.open('rb') do |rd|
           File.open("#{filename}+", 'wb') do |wr|
-            gz = Zlib::GzipWriter.new(wr, Zlib::BEST_COMPRESSION)
-            gz.mtime = mtime.to_i
-            buf = ""
-            while rd.read(16384, buf)
-              gz.write(buf)
-            end
-            gz.close
+            wr.write Zopfli.deflate(rd.read)
           end
         end
       else
