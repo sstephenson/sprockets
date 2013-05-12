@@ -1,10 +1,10 @@
+language: ruby
+
 rvm:
-  - 1.8.7
+  - jruby-19mode
   - 1.9.2
   - 1.9.3
   - 2.0.0
-  - jruby
-  - ree
 
 notifications:
   email: false

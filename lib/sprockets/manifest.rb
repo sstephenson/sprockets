@@ -1,4 +1,4 @@
-require 'multi_json'
+require 'json'
 require 'securerandom'
 require 'time'
 
@@ -64,7 +64,7 @@ module Sprockets
         if File.exist?(@path)
           data = json_decode(File.read(@path))
         end
-      rescue MultiJson::DecodeError => e
+      rescue JSON::ParserError => e
         logger.error "#{@path} is invalid: #{e.class} #{e.message}"
       end
 
@@ -223,23 +223,13 @@ module Sprockets
       end
 
     private
-      # Feature detect newer MultiJson API
-      if MultiJson.respond_to?(:dump)
-        def json_decode(obj)
-          MultiJson.load(obj)
-        end
 
-        def json_encode(obj)
-          MultiJson.dump(obj)
-        end
-      else
-        def json_decode(obj)
-          MultiJson.decode(obj)
-        end
+      def json_decode(obj)
+        JSON.load(obj)
+      end
 
-        def json_encode(obj)
-          MultiJson.encode(obj)
-        end
+      def json_encode(obj)
+        JSON.dump(obj)
       end
 
       def logger

@@ -5,7 +5,7 @@ require 'sprockets/errors'
 require 'sprockets/processed_asset'
 require 'sprockets/server'
 require 'sprockets/static_asset'
-require 'multi_json'
+require 'json'
 require 'pathname'
 
 module Sprockets
@@ -433,15 +433,8 @@ module Sprockets
         end
       end
 
-      # Feature detect newer MultiJson API
-      if MultiJson.respond_to?(:dump)
-        def json_decode(obj)
-          MultiJson.load(obj)
-        end
-      else
-        def json_decode(obj)
-          MultiJson.decode(obj)
-        end
+      def json_decode(obj)
+        JSON.load(obj)
       end
   end
 end
