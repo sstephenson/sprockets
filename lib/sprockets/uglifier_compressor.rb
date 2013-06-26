@@ -4,9 +4,14 @@ module Sprockets
   class UglifierCompressor < Tilt::Template
     self.default_mime_type = 'application/javascript'
 
-    def self.engine_initialized?
-      defined?(::Uglifier)
+    class << self
+      attr_accessor :keep_copyrights
+
+      def engine_initialized?
+        defined?(::Uglifier)
+      end
     end
+
 
     def initialize_engine
       require_template_library 'uglifier'
@@ -16,14 +21,20 @@ module Sprockets
     end
 
     def evaluate(context, locals, &block)
+      keep_copyrights = !!self.class.keep_copyrights
+
       # Feature detect Uglifier 2.0 option support
       if Uglifier::DEFAULTS[:copyright]
         # Uglifier < 2.x
-        Uglifier.new(:copyright => false).compile(data)
+        Uglifier.new(:copyright => keep_copyrights).compile(data)
       else
         # Uglifier >= 2.x
-        Uglifier.new(:comments => :none).compile(data)
+        options = { :comments => :none }
+        options[:comments] = :copyright if keep_copyrights
+
+        Uglifier.new(options).compile(data)
       end
+
     end
   end
 end
