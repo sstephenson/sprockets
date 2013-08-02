@@ -1,6 +1,7 @@
 require 'sprockets/version'
 
 module Sprockets
+  CLEAN_KEEP = Integer(ENV['SPROCKETS_CLEAN_KEEP'] || 2)
   # Environment
   autoload :Base,                    "sprockets/base"
   autoload :Environment,             "sprockets/environment"

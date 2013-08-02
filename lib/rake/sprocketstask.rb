@@ -100,7 +100,7 @@ module Rake
       @manifest     = lambda { Sprockets::Manifest.new(index, output) }
       @logger       = Logger.new($stderr)
       @logger.level = Logger::INFO
-      @keep         = 2
+      @keep         = Sprockets::CLEAN_KEEP
 
       yield self if block_given?
 
