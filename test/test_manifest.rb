@@ -247,6 +247,26 @@ class TestManifest < Sprockets::TestCase
     end
   end
 
+  test "remove deleted files" do
+    digest_path = @env['application.js'].digest_path
+    filename = fixture_path('default/application.js.coffee')
+
+    sandbox filename do
+      @manifest.compile('application.js')
+      file = "#{@dir}/#{digest_path}"
+      assert File.exist?(file)
+      FileUtils.rm_r(filename)
+      assert !File.exist?(filename)
+
+      @manifest.compile('application.js')
+      assert File.exist?(file)
+
+      @manifest.clean(0)
+
+      assert !File.exist?(file)
+    end
+  end
+
   test "remove old backups" do
     digest_path = @env['application.js'].digest_path
     filename = fixture_path('default/application.js.coffee')
