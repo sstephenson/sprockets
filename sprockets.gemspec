@@ -33,4 +33,6 @@ Gem::Specification.new do |s|
   s.email = ["sstephenson@gmail.com", "josh@joshpeek.com"]
   s.homepage = "http://getsprockets.org/"
   s.rubyforge_project = "sprockets"
+
+  s.required_ruby_version = '>= 1.9.3'
 end

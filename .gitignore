@@ -5,3 +5,4 @@ docs
 pkg
 tmp
 *.rbc
+*.gem
