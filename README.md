@@ -5,6 +5,8 @@ It features declarative dependency management for JavaScript and CSS
 assets, as well as a powerful preprocessor pipeline that allows you to
 write assets in languages like CoffeeScript, Sass, SCSS and LESS.
 
+[![Build Status](https://travis-ci.org/sstephenson/sprockets.png)](https://travis-ci.org/sstephenson/sprockets)
+
 # Installation #
 
 Install Sprockets from RubyGems:
