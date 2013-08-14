@@ -133,6 +133,7 @@ module Sprockets
             logger.info "Writing #{target}"
             asset.write_to target
             asset.write_to "#{target}.gz" if asset.is_a?(BundledAsset)
+            asset.write_to "#{target}z" if File.extname(target) == '.svg'
           end
 
           save
