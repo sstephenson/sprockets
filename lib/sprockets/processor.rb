@@ -3,7 +3,7 @@ require 'tilt'
 module Sprockets
   # `Processor` creates an anonymous processor class from a block.
   #
-  #     register_preprocessor :my_processor do |context, data|
+  #     register_preprocessor 'text/css', :my_processor do |context, data|
   #       # ...
   #     end
   #

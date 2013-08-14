@@ -161,7 +161,7 @@ module Sprockets
     #
     # A block can be passed for to create a shorthand processor.
     #
-    #     register_bundle_processor :my_processor do |context, data|
+    #     register_bundle_processor 'text/css', :my_processor do |context, data|
     #       data.gsub(...)
     #     end
     #
