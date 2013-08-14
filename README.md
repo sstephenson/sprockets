@@ -336,6 +336,11 @@ source file before any subsequent `require` or `include` directives.
 including it in the bundle. This is useful when you need to expire an
 asset's cache in response to a change in another file.
 
+### The `depend_on_asset` Directive ###
+
+`depend_on_asset` *path* works like `depend_on`, but operates
+recursively reading the the file and following the directives found.
+
 ### The `stub` Directive ###
 
 `stub` *path* allows dependency to be excluded from the asset bundle.
