@@ -53,6 +53,12 @@ module Sprockets
         # Return a 404 Not Found
         not_found_response
 
+      elsif raw?(env)
+        logger.info "#{msg} 200 OK (#{time_elapsed.call}ms)"
+
+        # Return a 200 with the asset's raw contents
+        raw_ok_response(asset, env)
+
       # Check request headers `HTTP_IF_NONE_MATCH` against the asset digest
       elsif etag_match?(asset, env)
         logger.info "#{msg} 304 Not Modified (#{time_elapsed.call}ms)"
@@ -183,6 +189,11 @@ module Sprockets
         env["QUERY_STRING"].to_s =~ /body=(1|t)/
       end
 
+      # Test if `?raw=1` or `raw=true` query param is set
+      def raw?(env)
+        env["QUERY_STRING"].to_s =~ /raw=(1|t)/
+      end
+
       # Returns a 304 Not Modified response tuple
       def not_modified_response(asset, env)
         [ 304, {}, [] ]
@@ -191,6 +202,11 @@ module Sprockets
       # Returns a 200 OK response tuple
       def ok_response(asset, env)
         [ 200, headers(env, asset, asset.length), asset ]
+      end
+
+      # Returns a 200 OK response tuple
+      def raw_ok_response(asset, env)
+        [ 200, headers(env, asset, asset.raw_length), asset.raw_source ]
       end
 
       def headers(env, asset, length)

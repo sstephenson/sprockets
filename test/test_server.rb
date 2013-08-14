@@ -44,6 +44,20 @@ class TestServer < Sprockets::TestCase
     assert_equal "9", last_response.headers['Content-Length']
   end
 
+  test "serve raw source" do
+    contents = <<-eos
+// =require "foo"
+
+(function() {
+  application.boot();
+})();
+eos
+
+    get "/assets/application.js?raw=1"
+    assert_equal 200, last_response.status
+    assert_equal contents, last_response.body
+  end
+
   test "serve single source file from indexed environment" do
     get "/cached/javascripts/foo.js"
     assert_equal "var foo;\n", last_response.body

@@ -9,8 +9,7 @@ module Sprockets
   class StaticAsset < Asset
     # Returns file contents as its `source`.
     def source
-      # File is read everytime to avoid memory bloat of large binary files
-      pathname.open('rb') { |f| f.read }
+      raw_source
     end
 
     # Implemented for Rack SendFile support.

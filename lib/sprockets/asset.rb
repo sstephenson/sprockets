@@ -29,7 +29,7 @@ module Sprockets
     end
 
     attr_reader :logical_path, :pathname
-    attr_reader :content_type, :mtime, :length, :digest
+    attr_reader :content_type, :mtime, :length, :raw_length, :digest
     alias_method :bytesize, :length
 
     def initialize(environment, logical_path, pathname)
@@ -42,6 +42,7 @@ module Sprockets
       # drop precision to 1 second, same pattern followed elsewhere
       @mtime        = Time.at(environment.stat(pathname).mtime.to_i)
       @length       = environment.stat(pathname).size
+      @raw_length   = @length
       @digest       = environment.file_digest(pathname).hexdigest
     end
 
@@ -66,6 +67,17 @@ module Sprockets
         # Convert length to an `Integer`
         @length = Integer(length)
       end
+
+      if raw_length = coder['raw_length']
+        # Convert length to an `Integer`
+        @raw_length = Integer(raw_length)
+      end
+    end
+
+    # Returns file contents as its `source`.
+    def raw_source
+      # File is read everytime to avoid memory bloat of large binary files
+      pathname.open('rb') { |f| f.read }
     end
 
     # Copy serialized attributes to the coder object
@@ -76,6 +88,7 @@ module Sprockets
       coder['content_type'] = content_type
       coder['mtime']        = mtime.to_i
       coder['length']       = length
+      coder['raw_length']   = raw_length
       coder['digest']       = digest
     end
 
