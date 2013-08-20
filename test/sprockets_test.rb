@@ -1,4 +1,4 @@
-require "test/unit"
+require "minitest/autorun"
 require "sprockets"
 require "tilt"
 require "fileutils"
@@ -10,13 +10,11 @@ if defined? Encoding
   $VERBOSE = old_verbose
 end
 
-class Sprockets::TestCase < Test::Unit::TestCase
+class Sprockets::TestCase < MiniTest::Test
   FIXTURE_ROOT = File.expand_path(File.join(File.dirname(__FILE__), "fixtures"))
 
-  undef_method :default_test if method_defined? :default_test
-
   def self.test(name, &block)
-    define_method("test #{name.inspect}", &block)
+    define_method("test_#{name.inspect}", &block)
   end
 
   def fixture(path)

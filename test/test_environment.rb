@@ -477,8 +477,8 @@ class TestEnvironment < Sprockets::TestCase
     require 'digest/sha1'
     @env.digest_class = Digest::SHA1
 
-    assert_not_equal old_digest, @env.digest
-    assert_not_equal old_asset_digest, @env["gallery.js"].digest
+    assert old_digest != @env.digest
+    assert old_asset_digest != @env["gallery.js"].digest
   end
 
   test "changing digest version" do
@@ -487,8 +487,8 @@ class TestEnvironment < Sprockets::TestCase
 
     @env.version = 'v2'
 
-    assert_not_equal old_digest, @env.digest
-    assert_not_equal old_asset_digest, @env["gallery.js"].digest
+    assert old_digest != @env.digest
+    assert old_asset_digest != @env["gallery.js"].digest
   end
 
   test "bundled asset is stale if its mtime is updated or deleted" do
@@ -558,7 +558,7 @@ class TestEnvironment < Sprockets::TestCase
       def foo; end
     end
 
-    assert_nothing_raised(NameError) { e1.context_class.instance_method(:foo) }
+    e1.context_class.instance_method(:foo)
     assert_raises(NameError) { e2.context_class.instance_method(:foo) }
   end
 

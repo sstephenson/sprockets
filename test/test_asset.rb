@@ -619,7 +619,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "requiring a file of a different format raises an exception" do
-    assert_raise Sprockets::ContentTypeMismatch do
+    assert_raises Sprockets::ContentTypeMismatch do
       asset("mismatch.js")
     end
   end
@@ -696,13 +696,13 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "can't require files outside the load path" do
-    assert_raise Sprockets::FileNotFound do
+    assert_raises Sprockets::FileNotFound do
       asset("relative/require_outside_path.js")
     end
   end
 
   test "can't require absolute files outside the load path" do
-    assert_raise Sprockets::FileOutsidePaths do
+    assert_raises Sprockets::FileOutsidePaths do
       asset("absolute/require_outside_path.js").to_s
     end
   end
@@ -743,19 +743,19 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "require_tree with a logical path argument raises an exception" do
-    assert_raise(Sprockets::ArgumentError) do
+    assert_raises(Sprockets::ArgumentError) do
       asset("tree/with_logical_path/require_tree_with_logical_path.js").to_s
     end
   end
 
   test "require_tree with a nonexistent path raises an exception" do
-    assert_raise(Sprockets::ArgumentError) do
+    assert_raises(Sprockets::ArgumentError) do
       asset("tree/with_logical_path/require_tree_with_nonexistent_path.js").to_s
     end
   end
 
   test "require_tree with a nonexistent absolute path raises an exception" do
-    assert_raise(Sprockets::ArgumentError) do
+    assert_raises(Sprockets::ArgumentError) do
       asset("absolute/require_nonexistent_path.js").to_s
     end
   end
@@ -772,7 +772,7 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "multiple require_self directives raises and error" do
-    assert_raise(Sprockets::ArgumentError) do
+    assert_raises(Sprockets::ArgumentError) do
       asset("require_self_twice.css")
     end
   end
@@ -786,13 +786,13 @@ class BundledAssetTest < Sprockets::TestCase
   end
 
   test "circular require raises an error" do
-    assert_raise(Sprockets::CircularDependencyError) do
+    assert_raises(Sprockets::CircularDependencyError) do
       asset("circle/a.js")
     end
-    assert_raise(Sprockets::CircularDependencyError) do
+    assert_raises(Sprockets::CircularDependencyError) do
       asset("circle/b.js")
     end
-    assert_raise(Sprockets::CircularDependencyError) do
+    assert_raises(Sprockets::CircularDependencyError) do
       asset("circle/c.js")
     end
   end
@@ -887,11 +887,11 @@ class BundledAssetTest < Sprockets::TestCase
   test "should not fail if home is not set in environment" do
     begin
       home, ENV["HOME"] = ENV["HOME"], nil
-      assert_nothing_raised do
-        env = Sprockets::Environment.new
-        env.append_path(fixture_path('asset'))
-        env['application.js']
-      end
+      env = Sprockets::Environment.new
+      env.append_path(fixture_path('asset'))
+      env['application.js']
+    rescue Exception
+      flunk
     ensure
       ENV["HOME"] = home
     end

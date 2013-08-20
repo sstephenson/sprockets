@@ -98,7 +98,7 @@ class TestServer < Sprockets::TestCase
       get "/assets/application.js"
       time_after_modifying = last_response.headers['Last-Modified']
 
-      assert_not_equal time_before_modifying, time_after_modifying
+      assert time_before_modifying != time_after_modifying
     end
   end
 

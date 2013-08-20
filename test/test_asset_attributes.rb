@@ -11,7 +11,7 @@ class TestAssetAttributes < Sprockets::TestCase
   end
 
   test "logical path" do
-    assert_raise Sprockets::FileOutsidePaths do
+    assert_raises Sprockets::FileOutsidePaths do
       pathname(fixture_path("missing/application.js")).logical_path
     end
 

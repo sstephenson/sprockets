@@ -27,7 +27,7 @@ class EncodingTest < Sprockets::TestCase
     end
 
     test "read UTF-16 asset" do
-      assert_raise Sprockets::EncodingError do
+      assert_raises Sprockets::EncodingError do
         @env['utf16.js'].to_s
       end
     end
