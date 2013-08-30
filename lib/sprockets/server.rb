@@ -222,7 +222,7 @@ module Sprockets
       #     # => "0aa2105d29558f3eb790d411d7d8fb66"
       #
       def path_fingerprint(path)
-        path[/-([0-9a-f]{7,40})\.[^.]+$/, 1]
+        path[/-([^-0-9a-f]{7,40})\.[^.]+$/, 1]
       end
 
       # URI.unescape is deprecated on 1.9. We need to use URI::Parser

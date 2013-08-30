@@ -159,6 +159,11 @@ class TestServer < Sprockets::TestCase
     assert_match %r{max-age}, last_response.headers['Cache-Control']
   end
 
+  test "fingerprint of files that contain digest in name" do
+    get "/assets/080c59ed-2c7d-48e2-8d35-73da0b57a6c3.js"
+    assert_equal "// 080c59ed-2c7d-48e2-8d35-73da0b57a6c3.js\n;\n", last_response.body
+  end
+
   test "missing source" do
     get "/assets/none.js"
     assert_equal 404, last_response.status
@@ -195,7 +200,7 @@ class TestServer < Sprockets::TestCase
 
     sandbox filename do
       get "/assets/tree.js"
-      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar japanese = \"日本語\";\n", last_response.body
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar japanese = \"日本語\";\n\n\n", last_response.body
 
       File.open(filename, "w") do |f|
         f.puts "var baz;"
@@ -206,7 +211,7 @@ class TestServer < Sprockets::TestCase
       File.utime(mtime, mtime, path)
 
       get "/assets/tree.js"
-      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\nvar japanese = \"日本語\";\n", last_response.body
+      assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\nvar bar;\nvar baz;\nvar japanese = \"日本語\";\n\n\n", last_response.body
     end
   end
 
