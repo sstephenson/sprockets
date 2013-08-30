@@ -7,7 +7,7 @@ require 'tilt'
 module Sprockets
   # `Engines` provides a global and `Environment` instance registry.
   #
-  # An engine is a type of processor that is bound to an filename
+  # An engine is a type of processor that is bound to a filename
   # extension. `application.js.coffee` indicates that the
   # `CoffeeScriptTemplate` engine will be ran on the file.
   #
