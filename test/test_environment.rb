@@ -4,7 +4,7 @@ require 'execjs'
 
 module EnvironmentTests
   def self.test(name, &block)
-    define_method("test #{name.inspect}", &block)
+    define_method("test_#{name.inspect}", &block)
   end
 
   test "working directory is the default root" do

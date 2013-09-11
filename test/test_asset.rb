@@ -2,7 +2,7 @@ require "sprockets_test"
 
 module AssetTests
   def self.test(name, &block)
-    define_method("test #{name.inspect}", &block)
+    define_method("test_#{name.inspect}", &block)
   end
 
   test "pathname is a Pathname that exists" do
