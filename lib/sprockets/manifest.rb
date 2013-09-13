@@ -225,11 +225,11 @@ module Sprockets
     private
 
       def json_decode(obj)
-        JSON.load(obj)
+        JSON.parse(obj, create_additions: false)
       end
 
       def json_encode(obj)
-        JSON.dump(obj)
+        JSON.generate(obj)
       end
 
       def logger
