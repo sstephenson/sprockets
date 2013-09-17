@@ -83,6 +83,35 @@ module Sprockets
       @data['assets'] ||= {}
     end
 
+    # Stores last compile time of assets
+    def compiled_at=(iso8601)
+      @data['compiled_at'] = iso8601
+    end
+
+    # Returns last compile time of assets
+    def compiled_at
+      @data['compiled_at'] || false
+    end
+
+    # Returns internal assets that have been moved from
+    # directory. Keys are filenames which map to an
+    # attributes array
+    #
+    #   Fingerprint path (String):
+    #     logical_path: Logical path (String)
+    #     mtime: ISO8601 mtime (String)
+    #     digest: Base64 hex digest (String)
+    #     generation: Survived cleans (Integer)
+    #
+    #  { "application-2e8e9a7c6b0aafa0c9bdeec90ea30213.js" =>
+    #      { 'logical_path' => "application.js",
+    #        'mtime' => "2011-12-13T21:47:08-06:00",
+    #        'digest' => "2e8e9a7c6b0aafa0c9bdeec90ea30213",
+    #        'generation' => 1 } }
+    def deleted_assets
+      @data['deleted_assets'] ||= {}
+    end
+
     # Returns internal file directory listing. Keys are filenames
     # which map to an attributes array.
     #
@@ -90,11 +119,13 @@ module Sprockets
     #     logical_path: Logical path (String)
     #     mtime: ISO8601 mtime (String)
     #     digest: Base64 hex digest (String)
+    #     compiled_at: ISO8601 compiled time (String)
     #
     #  { "application-2e8e9a7c6b0aafa0c9bdeec90ea30213.js" =>
     #      { 'logical_path' => "application.js",
     #        'mtime' => "2011-12-13T21:47:08-06:00",
-    #        'digest' => "2e8e9a7c6b0aafa0c9bdeec90ea30213" } }
+    #        'digest' => "2e8e9a7c6b0aafa0c9bdeec90ea30213",
+    #        'compiled_at' => "2013-11-10T11:37:08-06:00"} }
     #
     def files
       @data['files'] ||= {}
@@ -115,15 +146,18 @@ module Sprockets
       paths = environment.each_logical_path(*args).to_a +
         args.flatten.select { |fn| Pathname.new(fn).absolute? if fn.is_a?(String)}
 
+      self.compiled_at = Time.now.utc.iso8601(6)
       paths.each do |path|
         if asset = find_asset(path)
           files[asset.digest_path] = {
             'logical_path' => asset.logical_path,
             'mtime'        => asset.mtime.iso8601,
             'size'         => asset.bytesize,
-            'digest'       => asset.digest
+            'digest'       => asset.digest,
+            'compiled_at'  => compiled_at
           }
           assets[asset.logical_path] = asset.digest_path
+          deleted_assets.delete(asset.logical_path)
 
           target = File.join(dir, asset.digest_path)
 
@@ -134,11 +168,9 @@ module Sprockets
             asset.write_to target
             asset.write_to "#{target}.gz" if asset.is_a?(BundledAsset)
           end
-
-          save
-          asset
         end
       end
+      save
     end
 
     # Removes file from directory and from manifest. `filename` must
@@ -156,28 +188,28 @@ module Sprockets
       end
 
       files.delete(filename)
+      deleted_assets.delete(logical_path)
       FileUtils.rm(path) if File.exist?(path)
       FileUtils.rm(gzip) if File.exist?(gzip)
 
       save
 
       logger.info "Removed #{filename}"
-
       nil
     end
 
     # Cleanup old assets in the compile directory. By default it will
     # keep the latest version plus 2 backups.
     def clean(keep = 2)
-      self.assets.keys.each do |logical_path|
+      self.assets.each do |logical_path, file_name|
         # Get assets sorted by ctime, newest first
         assets = backups_for(logical_path)
-
-        # Keep the last N backups
-        assets = assets[keep..-1] || []
-
         # Remove old assets
-        assets.each { |path, _| remove(path) }
+        old_assets = assets[keep..-1] || [] # Keep the last N backups
+        old_assets.each { |path, _| remove(path) }
+
+        # Remove deleted assets
+        remove_if_deleted(file_name, keep)
       end
     end
 
@@ -189,6 +221,29 @@ module Sprockets
     end
 
     protected
+      # Remove deleted files in the compile directory. By default it
+      # will only remove the file after a given number of deploys have
+      # passed
+      def remove_if_deleted(file, keep)
+        asset        = files[file]
+        logical_path = asset['logical_path']
+        return true unless asset_removed?(asset)
+        deleted      = deleted_assets.fetch(logical_path) { asset }
+        generation   = deleted['generation'] ||= 0
+        if generation >= keep
+          remove(file)
+        else
+          deleted.merge!('generation' => generation + 1)
+          save
+        end
+      end
+
+      def asset_removed?(asset) # :nodoc:
+        return false unless asset['compiled_at']
+        return false unless compiled_at
+        Time.parse(compiled_at) > Time.parse(asset['compiled_at'])
+      end
+
       # Finds all the backup assets for a logical path. The latest
       # version is always excluded. The return array is sorted by the
       # assets mtime in descending order (Newest to oldest).
