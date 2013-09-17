@@ -76,6 +76,13 @@ class TestServer < Sprockets::TestCase
       last_response.headers['ETag']
   end
 
+  test "serve source with session skipped" do
+    rack_env = { 'PATH_INFO' => "application.js" }
+    @env.call(rack_env)
+    assert_equal true, rack_env['rack.session.options'][:skip]
+    assert_equal true, rack_env['rack.session.options'][:defer]
+  end
+
   test "updated file updates the last modified header" do
     time = Time.now
     path = fixture_path "server/app/javascripts/foo.js"
@@ -165,6 +172,12 @@ class TestServer < Sprockets::TestCase
     assert_equal "pass", last_response.headers['X-Cascade']
   end
 
+  test "missing source does not touch env" do
+    rack_env = { 'PATH_INFO' => "none.js" }
+    @env.call(rack_env)
+    assert_equal nil, rack_env['rack.session.options']
+  end
+  
   test "re-throw JS exceptions in the browser" do
     get "/assets/missing_require.js"
     assert_equal 200, last_response.status
