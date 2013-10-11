@@ -129,7 +129,7 @@ module Sprockets
         args = attributes_for(logical_path).search_paths + [options]
         @trail.find(*args) do |path|
           pathname = Pathname.new(path)
-          if %w( bower.json component.json ).include?(pathname.basename.to_s)
+          if %w( package.json bower.json component.json ).include?(pathname.basename.to_s)
             bower = json_decode(pathname.read)
             case bower['main']
             when String
