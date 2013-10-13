@@ -6,7 +6,7 @@ module Sprockets
   # The Manifest logs the contents of assets compiled to a single
   # directory. It records basic attributes about the asset for fast
   # lookup without having to compile. A pointer from each logical path
-  # indicates with fingerprinted asset is the current one.
+  # indicates which fingerprinted asset is the current one.
   #
   # The JSON is part of the public API and should be considered
   # stable. This should make it easy to read from other programming
