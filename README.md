@@ -193,7 +193,7 @@ template function to render the template as a string. The resulting
 string can then be inserted into the DOM.
 
     <!-- templates/hello.jst.ejs -->
-    <div>Hello, <span><%= name %></span>!</div>
+    <div>Hello, <span><%= this.name %></span>!</div>
 
     // application.js
     //= require templates/hello
