@@ -300,6 +300,23 @@ module EnvironmentTests
     assert !paths.include?("gallery.css")
   end
 
+  test "filtered?" do
+    asset = @env["with_data_uri.css"]
+    assert @env.filtered?(asset, [])
+    # regex
+    assert @env.filtered?(asset, [/.*/])
+    assert !@env.filtered?(asset, [/[^\s\S]/])
+    # call arity 1
+    assert @env.filtered?(asset, [Proc.new {|lp| true }])
+    assert !@env.filtered?(asset, [Proc.new {|lp| false }])
+    # call arity 2
+    assert @env.filtered?(asset, [Proc.new {|lp, f| true }])
+    assert !@env.filtered?(asset, [Proc.new {|lp, f| false }])
+    # file glob
+    assert @env.filtered?(asset, ["*.css"])
+    assert !@env.filtered?(asset, ["*.foo"])
+  end
+
   test "iterate over each logical path matching proc filters" do
     paths = []
     @env.each_logical_path(proc { |fn| File.extname(fn) == '.js' }) do |logical_path|
