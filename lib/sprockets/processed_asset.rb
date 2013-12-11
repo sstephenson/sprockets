@@ -1,5 +1,6 @@
 require 'sprockets/asset'
 require 'sprockets/utils'
+require 'set'
 
 module Sprockets
   class ProcessedAsset < Asset
@@ -99,26 +100,19 @@ module Sprockets
       end
 
       def resolve_dependencies(environment, paths)
-        assets = []
-        cache  = {}
+        assets = Set.new
 
         paths.each do |path|
           if path == self.pathname.to_s
-            unless cache[self]
-              cache[self] = true
-              assets << self
-            end
+            assets << self
           elsif asset = environment.find_asset(path, :bundle => false)
             asset.required_assets.each do |asset_dependency|
-              unless cache[asset_dependency]
-                cache[asset_dependency] = true
-                assets << asset_dependency
-              end
+              assets << asset_dependency
             end
           end
         end
 
-        assets
+        assets.to_a
       end
 
       def build_dependency_paths(environment, context)
