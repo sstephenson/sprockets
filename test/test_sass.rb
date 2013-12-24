@@ -223,7 +223,7 @@ class TestSassCompressor < TestBaseSass
       assert_equal compressed, Sprockets::SassCompressor.new("foo.css") { uncompressed }.render(context)
     end
   end
-  test "compress css with function" do
+  test "compress css that uses a helper function" do
     silence_warnings do
       context = Object.new
       def context.environment()
