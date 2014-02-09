@@ -168,7 +168,7 @@ module Sprockets
 
     # Cleanup old assets in the compile directory. By default it will
     # keep the latest version plus 2 backups.
-    def clean(keep = 2)
+    def clean(keep = Sprockets::CLEAN_KEEP)
       self.assets.keys.each do |logical_path|
         # Get assets sorted by ctime, newest first
         assets = backups_for(logical_path)
