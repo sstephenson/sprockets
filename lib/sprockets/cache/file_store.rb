@@ -15,8 +15,12 @@ module Sprockets
 
       # Lookup value in cache
       def [](key)
-        pathname = @root.join(key)
-        pathname.exist? ? pathname.open('rb') { |f| Marshal.load(f) } : nil
+        begin
+          pathname = @root.join(key)
+          pathname.exist? ? pathname.open('rb') { |f| Marshal.load(f) } : nil
+        rescue
+          retry
+        end
       end
 
       # Save value to cache
