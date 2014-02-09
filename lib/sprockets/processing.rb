@@ -169,7 +169,7 @@ module Sprockets
       def add_engine_to_trail(ext, klass)
         @trail.append_extension(ext.to_s)
 
-        if klass.respond_to?(:default_mime_type) && klass.default_mime_type
+        if klass.respond_to?(:default_mime_type) && (klass.default_mime_type ||= nil)
           if format_ext = extension_for_mime_type(klass.default_mime_type)
             @trail.alias_extension(ext.to_s, format_ext)
           end
