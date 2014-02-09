@@ -61,8 +61,8 @@ module Sprockets
     # All its file system calls are cached which makes `index` much
     # faster. This behavior is ideal in production since the file
     # system only changes between deploys.
-    def index
-      Index.new(self)
+    def index(options = {})
+      Index.new(self, options)
     end
 
     # Cache `find_asset` calls
@@ -70,11 +70,21 @@ module Sprockets
       options[:bundle] = true unless options.key?(:bundle)
 
       # Ensure inmemory cached assets are still fresh on every lookup
-      if (asset = @assets[cache_key_for(path, options)]) && asset.fresh?(self)
+      cache_key = cache_key_for(path, options)
+      if (asset = @assets[cache_key]) && asset.fresh?(self)
         asset
-      elsif asset = index.find_asset(path, options)
+      else
+        # Duplicate `assets` and delete the asset we're finding
+        # to prevent a redundant `fresh?` check in `index`. Sending
+        # the assets hash with `index` ensures that dependencies
+        # are loaded from the in-memory cache first.
+        assets = @assets.dup
+        assets.delete cache_key
+
         # Cache is pushed upstream by Index#find_asset
-        asset
+        if asset = index(:assets => assets).find_asset(path, options)
+          asset
+        end
       end
     end
 

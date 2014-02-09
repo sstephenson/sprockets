@@ -11,7 +11,7 @@ module Sprockets
   # `Index` should not be initialized directly. Instead use
   # `Environment#index`.
   class Index < Base
-    def initialize(environment)
+    def initialize(environment, options = {})
       @environment = environment
 
       if environment.respond_to?(:default_external_encoding)
@@ -35,7 +35,7 @@ module Sprockets
       @compressors       = environment.compressors
 
       # Initialize caches
-      @assets  = {}
+      @assets  = options[:assets] || {}
       @digests = {}
     end
 
@@ -57,7 +57,7 @@ module Sprockets
     # Cache `find_asset` calls
     def find_asset(path, options = {})
       options[:bundle] = true unless options.key?(:bundle)
-      if asset = @assets[cache_key_for(path, options)]
+      if (asset = @assets[cache_key_for(path, options)]) && asset.fresh?(self)
         asset
       elsif asset = super
         logical_path_cache_key = cache_key_for(path, options)
@@ -86,8 +86,8 @@ module Sprockets
       def build_asset(path, pathname, options)
         # Memory cache
         key = cache_key_for(pathname, options)
-        if @assets.key?(key)
-          @assets[key]
+        if (asset = @assets[key]) && asset.fresh?(self)
+          asset
         else
           @assets[key] = begin
             # Persisted cache
