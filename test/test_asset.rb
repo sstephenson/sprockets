@@ -780,6 +780,10 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal "var Foo = {};\n\n\n\n", asset("stub/application").to_s
   end
 
+  test "stub dependency from within dependency tree" do
+    assert_equal "var Bundle = {};\n\n\n\n", asset("stub/bundle").to_s
+  end
+
   test "circular require raises an error" do
     assert_raises(Sprockets::CircularDependencyError) do
       asset("circle/a.js")
