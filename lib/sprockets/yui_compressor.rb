@@ -1,19 +1,8 @@
-require 'tilt'
-
 module Sprockets
-  class YUICompressor < Tilt::Template
-    def self.engine_initialized?
-      defined?(::YUI)
-    end
+  class YUICompressor < Template
+    def render(context)
+      require 'yui/compressor' unless defined? ::YUI
 
-    def initialize_engine
-      require_template_library 'yui/compressor'
-    end
-
-    def prepare
-    end
-
-    def evaluate(context, locals, &block)
       case context.content_type
       when 'application/javascript'
         YUI::JavaScriptCompressor.new.compress(data)

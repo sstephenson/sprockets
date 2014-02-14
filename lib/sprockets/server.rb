@@ -25,11 +25,6 @@ module Sprockets
 
       msg = "Served asset #{env['PATH_INFO']} -"
 
-      # Mark session as "skipped" so no `Set-Cookie` header is set
-      env['rack.session.options'] ||= {}
-      env['rack.session.options'][:defer] = true
-      env['rack.session.options'][:skip] = true
-
       # Extract the path from everything after the leading slash
       path = unescape(env['PATH_INFO'].to_s.sub(/^\//, ''))
 
@@ -49,7 +44,7 @@ module Sprockets
       end
 
       # Look up the asset.
-      asset = find_asset(path, :bundle => !body_only?(env), :source => source_only?(env))
+      asset = find_asset(path, bundle: !body_only?(env), source: source_only?(env))
 
       # `find_asset` returns nil if the asset doesn't exist
       if asset.nil?

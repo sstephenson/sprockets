@@ -20,14 +20,8 @@ module Sprockets
       @mime_types.dup
     end
 
-    if {}.respond_to?(:key)
-      def extension_for_mime_type(type)
-        mime_types.key(type)
-      end
-    else
-      def extension_for_mime_type(type)
-        mime_types.index(type)
-      end
+    def extension_for_mime_type(type)
+      mime_types.key(type)
     end
 
     # Register a new mime type.
@@ -36,14 +30,12 @@ module Sprockets
       @mime_types[ext] = mime_type
     end
 
-    if defined? Encoding
-      # Returns the correct encoding for a given mime type, while falling
-      # back on the default external encoding, if it exists.
-      def encoding_for_mime_type(type)
-        encoding = Encoding::BINARY if type =~ %r{^(image|audio|video)/}
-        encoding ||= default_external_encoding if respond_to?(:default_external_encoding)
-        encoding
-      end
+    # Returns the correct encoding for a given mime type, while falling
+    # back on the default external encoding, if it exists.
+    def encoding_for_mime_type(type)
+      encoding = Encoding::BINARY if type =~ %r{^(image|audio|video)/}
+      encoding ||= default_external_encoding if respond_to?(:default_external_encoding)
+      encoding
     end
   end
 end

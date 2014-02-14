@@ -9,7 +9,7 @@ module Sprockets
     end
 
     def _store(key, version, sha, contents)
-      environment.cache_set("sass/#{key}", {:version => version, :sha => sha, :contents => contents})
+      environment.cache_set("sass/#{key}", {version: version, sha: sha, contents: contents})
     end
 
     def _retrieve(key, version, sha)

@@ -1,7 +1,11 @@
 require "minitest/autorun"
 require "sprockets"
-require "tilt"
 require "fileutils"
+
+require "coffee_script"
+require "eco"
+require "ejs"
+require "erb"
 
 if defined? Encoding
   old_verbose, $VERBOSE = $VERBOSE, false

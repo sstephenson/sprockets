@@ -1,5 +1,4 @@
 require 'sprockets_test'
-require 'tilt'
 require 'yaml'
 
 class TestContext < Sprockets::TestCase
@@ -56,17 +55,11 @@ class TestCustomProcessor < Sprockets::TestCase
     @env.append_path(fixture_path('context'))
   end
 
-  class YamlProcessor < Tilt::Template
-    def initialize_engine
-      require 'yaml'
-    end
-
-    def prepare
-      @manifest = YAML.load(data)
-    end
-
-    def evaluate(context, locals)
-      @manifest['require'].each do |logical_path|
+  require 'yaml'
+  class YamlProcessor < Sprockets::Template
+    def render(context)
+      manifest = YAML.load(data)
+      manifest['require'].each do |logical_path|
         context.require_asset(logical_path)
       end
       ""
@@ -79,15 +72,9 @@ class TestCustomProcessor < Sprockets::TestCase
     assert_equal "var Foo = {};\n\nvar Bar = {};\n", @env['application.js'].to_s
   end
 
-  class DataUriProcessor < Tilt::Template
-    def initialize_engine
-      require 'base64'
-    end
-
-    def prepare
-    end
-
-    def evaluate(context, locals)
+  require 'base64'
+  class DataUriProcessor < Sprockets::Template
+    def render(context)
       data.gsub(/url\(\"(.+?)\"\)/) do
         path = context.resolve($1)
         context.depend_on(path)

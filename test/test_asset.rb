@@ -689,11 +689,6 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal read("users.js") + "var jQuery;\n\n\n", asset("unknownexts.min.js").to_s
   end
 
-  test "processing a source file in compat mode" do
-    assert_equal read("project.js") + "\n" + read("users.js") + "\n\n\n\n",
-      asset("compat.js").to_s
-  end
-
   test "included dependencies are inserted after the header of the dependent file" do
     assert_equal "# My Application\n\n" + read("project.js") + "\n\nhello();\n",
       asset("included_header.js").to_s
@@ -825,11 +820,9 @@ class BundledAssetTest < Sprockets::TestCase
     assert_equal "application/javascript", asset.content_type
   end
 
-  if Tilt::CoffeeScriptTemplate.respond_to?(:default_mime_type)
-    test "asset falls back to engines default mime type" do
-      asset = asset("default_mime_type.js")
-      assert_equal "application/javascript", asset.content_type
-    end
+  test "asset falls back to engines default mime type" do
+    asset = asset("default_mime_type.js")
+    assert_equal "application/javascript", asset.content_type
   end
 
   test "asset is a rack response body" do
@@ -856,11 +849,6 @@ class BundledAssetTest < Sprockets::TestCase
 
   test "asset is fresh if its mtime and contents are the same" do
     assert asset("application.js").fresh?(@env)
-  end
-
-  test "legacy constants.yml" do
-    assert_equal "var Prototype = { version: '2.0' };\n",
-      asset("constants.js").to_s
   end
 
   test "multiple charset defintions are stripped from css bundle" do

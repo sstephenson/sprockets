@@ -28,8 +28,8 @@ module Sprockets
     # Preprocessors are ran before Postprocessors and Engine
     # processors.
     #
-    # All `Processor`s must follow the `Tilt::Template` interface. It is
-    # recommended to subclass `Tilt::Template`.
+    # All `Processor`s must follow the `Template` interface. It is
+    # recommended to subclass `Template`.
     def preprocessors(mime_type = nil)
       if mime_type
         @preprocessors[mime_type].dup
@@ -44,8 +44,8 @@ module Sprockets
     #
     # Postprocessors are ran after Preprocessors and Engine processors.
     #
-    # All `Processor`s must follow the `Tilt::Template` interface. It is
-    # recommended to subclass `Tilt::Template`.
+    # All `Processor`s must follow the `Template` interface. It is
+    # recommended to subclass `Template`.
     def postprocessors(mime_type = nil)
       if mime_type
         @postprocessors[mime_type].dup
@@ -127,8 +127,8 @@ module Sprockets
     # Bundle Processors are ran on concatenated assets rather than
     # individual files.
     #
-    # All `Processor`s must follow the `Tilt::Template` interface. It is
-    # recommended to subclass `Tilt::Template`.
+    # All `Processor`s must follow the `Template` interface. It is
+    # recommended to subclass `Template`.
     def bundle_processors(mime_type = nil)
       if mime_type
         @bundle_processors[mime_type].dup

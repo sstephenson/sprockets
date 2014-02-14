@@ -1,5 +1,3 @@
-require 'tilt'
-
 module Sprockets
   # For JS developers who are colonfobic, concatenating JS files using
   # the module pattern usually leads to syntax errors.
@@ -11,11 +9,8 @@ module Sprockets
   #
   #     environment.unregister_postprocessor 'application/javascript', Sprockets::SafetyColons
   #
-  class SafetyColons < Tilt::Template
-    def prepare
-    end
-
-    def evaluate(context, locals, &block)
+  class SafetyColons < Template
+    def render(context)
       # If the file is blank or ends in a semicolon, leave it as is
       if data =~ /\A\s*\Z/m || data =~ /;\s*\Z/m
         data

@@ -1,20 +1,8 @@
 require 'sprockets_test'
 
-class TestTiltSass < Sprockets::TestCase
+class TestBaseSass < Sprockets::TestCase
   CACHE_PATH = File.expand_path("../../.sass-cache", __FILE__)
   COMPASS_PATH = File.join(FIXTURE_ROOT, 'compass')
-
-  class SassTemplate < Tilt::SassTemplate
-    def sass_options
-      options.merge({:filename => eval_file, :line => line, :syntax => :sass, :load_paths => [COMPASS_PATH]})
-    end
-  end
-
-  class ScssTemplate < Tilt::ScssTemplate
-    def sass_options
-      options.merge({:filename => eval_file, :line => line, :syntax => :scss, :load_paths => [COMPASS_PATH]})
-    end
-  end
 
   def setup
     silence_warnings do
@@ -27,15 +15,33 @@ class TestTiltSass < Sprockets::TestCase
     assert !File.exist?(CACHE_PATH)
   end
 
+  def silence_warnings
+    old_verbose, $VERBOSE = $VERBOSE, false
+    yield
+  ensure
+    $VERBOSE = old_verbose
+  end
+end
+
+class TestSprocketsSass < TestBaseSass
+  def setup
+    super
+
+    @env = Sprockets::Environment.new(".") do |env|
+      env.cache = {}
+      env.append_path(fixture_path('.'))
+      env.append_path(fixture_path('compass'))
+    end
+  end
+
+  def teardown
+    assert !File.exist?(CACHE_PATH)
+  end
+
   def render(path)
     path = fixture_path(path)
     silence_warnings do
-      case File.extname(path)
-      when '.sass'
-        SassTemplate.new(path).render
-      when '.scss', '.css'
-        ScssTemplate.new(path).render
-      end
+      @env[path].to_s
     end
   end
 
@@ -200,44 +206,14 @@ a:link {
   color: "blue"; }
     EOS
   end
-
-  def silence_warnings
-    old_verbose, $VERBOSE = $VERBOSE, false
-    yield
-  ensure
-    $VERBOSE = old_verbose
-  end
 end
 
-class TestSprocketsSass < TestTiltSass
-  def setup
-    super
-
-    @env = Sprockets::Environment.new(".") do |env|
-      env.cache = {}
-      env.append_path(fixture_path('.'))
-      env.append_path(fixture_path('compass'))
-    end
-  end
-
-  def teardown
-    assert !File.exist?(CACHE_PATH)
-  end
-
-  def render(path)
-    path = fixture_path(path)
-    silence_warnings do
-      @env[path].to_s
-    end
-  end
-end
-
-class TestSassCompressor < TestTiltSass
+class TestSassCompressor < TestBaseSass
   test "compress css" do
     silence_warnings do
       uncompressed = "p {\n  margin: 0;\n  padding: 0;\n}\n"
       compressed   = "p{margin:0;padding:0}\n"
-      assert_equal compressed, Sprockets::SassCompressor.new { uncompressed }.render
+      assert_equal compressed, Sprockets::SassCompressor.new("foo.css") { uncompressed }.render(Object.new)
     end
   end
 end

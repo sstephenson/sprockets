@@ -17,17 +17,18 @@ module Sprockets
     def search_paths
       paths = [pathname.to_s]
 
-      path_without_extensions = extensions.inject(pathname) { |p, ext| p.sub(ext, '') }
+      extension = format_extension
+      path_without_extension = extension ?
+        pathname.sub(extension, '') :
+        pathname
 
       # optimization: bower.json can only be nested one level deep
-      if !path_without_extensions.to_s.index('/')
-        paths << path_without_extensions.join("bower.json").to_s
-        # DEPRECATED bower configuration file
-        paths << path_without_extensions.join("component.json").to_s
+      if !path_without_extension.to_s.index('/')
+        paths << path_without_extension.join("bower.json").to_s
       end
 
-      if pathname.basename(extensions.join).to_s != 'index'
-        paths << path_without_extensions.join("index#{extensions.join}").to_s
+      if pathname.basename(extension.to_s).to_s != 'index'
+        paths << path_without_extension.join("index#{extension}").to_s
       end
 
       paths

@@ -1,5 +1,3 @@
-require 'tilt'
-
 module Sprockets
   # `Processor` creates an anonymous processor class from a block.
   #
@@ -7,7 +5,7 @@ module Sprockets
   #       # ...
   #     end
   #
-  class Processor < Tilt::Template
+  class Processor
     def self.make_processor(klass, &block) # :nodoc:
       return klass unless block_given?
 
@@ -31,11 +29,14 @@ module Sprockets
       name
     end
 
-    def prepare
+    attr_reader :data
+
+    def initialize(file, &block)
+      @data = block.call
     end
 
     # Call processor block with `context` and `data`.
-    def evaluate(context, locals)
+    def render(context)
       self.class.processor.call(context, data)
     end
   end
