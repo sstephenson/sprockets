@@ -15,14 +15,14 @@ module Sprockets
 
     # Returns a `Digest` implementation class.
     #
-    # Defaults to `Digest::MD5`.
+    # Defaults to `Digest::SHA1`.
     attr_reader :digest_class
 
     # Assign a `Digest` implementation class. This maybe any Ruby
-    # `Digest::` implementation such as `Digest::MD5` or
-    # `Digest::SHA1`.
+    # `Digest::` implementation such as `Digest::SHA1` or
+    # `Digest::MD5`.
     #
-    #     environment.digest_class = Digest::SHA1
+    #     environment.digest_class = Digest::MD5
     #
     def digest_class=(klass)
       expire_index!
@@ -130,7 +130,7 @@ module Sprockets
         args = attributes_for(logical_path).search_paths + [options]
         @trail.find(*args) do |path|
           pathname = Pathname.new(path)
-          if %w( bower.json component.json ).include?(pathname.basename.to_s)
+          if pathname.basename.to_s == "bower.json"
             bower = json_decode(pathname.read)
             case bower['main']
             when String
@@ -218,20 +218,6 @@ module Sprockets
       attr_accessor :default_external_encoding
     end
 
-    # Works like `Dir.entries`.
-    #
-    # Subclasses may cache this method.
-    def entries(pathname)
-      @trail.entries(pathname)
-    end
-
-    # Works like `File.stat`.
-    #
-    # Subclasses may cache this method.
-    def stat(path)
-      @trail.stat(path)
-    end
-
     # Read and compute digest of filename.
     #
     # Subclasses may cache this method.
@@ -296,59 +282,6 @@ module Sprockets
       find_asset(*args)
     end
 
-    def each_entry(root, &block)
-      return to_enum(__method__, root) unless block_given?
-      root = Pathname.new(root) unless root.is_a?(Pathname)
-
-      paths = []
-      entries(root).sort.each do |filename|
-        path = root.join(filename)
-        paths << path
-
-        if stat(path).directory?
-          each_entry(path) do |subpath|
-            paths << subpath
-          end
-        end
-      end
-
-      paths.sort_by(&:to_s).each(&block)
-
-      nil
-    end
-
-    def each_file
-      return to_enum(__method__) unless block_given?
-      paths.each do |root|
-        each_entry(root) do |path|
-          if !stat(path).directory?
-            yield path
-          end
-        end
-      end
-      nil
-    end
-
-    def each_logical_path(*args, &block)
-      return to_enum(__method__, *args) unless block_given?
-      filters = args.flatten
-      files = {}
-      each_file do |filename|
-        if logical_path = logical_path_for_filename(filename, filters)
-          unless files[logical_path]
-            if block.arity == 2
-              yield logical_path, filename.to_s
-            else
-              yield logical_path
-            end
-          end
-
-          files[logical_path] = true
-        end
-      end
-      nil
-    end
-
     # Pretty inspect
     def inspect
       "#<#{self.class}:0x#{object_id.to_s(16)} " +
@@ -404,42 +337,6 @@ module Sprockets
         yield
       ensure
         Thread.current[:sprockets_circular_calls] = nil if reset
-      end
-
-      def logical_path_for_filename(filename, filters)
-        logical_path = attributes_for(filename).logical_path.to_s
-
-        if matches_filter(filters, logical_path, filename)
-          return logical_path
-        end
-
-        # If filename is an index file, retest with alias
-        if File.basename(logical_path)[/[^\.]+/, 0] == 'index'
-          path = logical_path.sub(/\/index\./, '.')
-          if matches_filter(filters, path, filename)
-            return path
-          end
-        end
-
-        nil
-      end
-
-      def matches_filter(filters, logical_path, filename)
-        return true if filters.empty?
-
-        filters.any? do |filter|
-          if filter.is_a?(Regexp)
-            filter.match(logical_path)
-          elsif filter.respond_to?(:call)
-            if filter.arity == 1
-              filter.call(logical_path)
-            else
-              filter.call(logical_path, filename.to_s)
-            end
-          else
-            File.fnmatch(filter.to_s, logical_path)
-          end
-        end
       end
 
       def json_decode(obj)

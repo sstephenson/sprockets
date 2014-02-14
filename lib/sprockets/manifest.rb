@@ -112,7 +112,7 @@ module Sprockets
         raise Error, "manifest requires environment for compilation"
       end
 
-      paths = environment.each_logical_path(*args).to_a +
+      paths = environment.find_logical_paths(*args).to_a +
         args.flatten.select { |fn| Pathname.new(fn).absolute? if fn.is_a?(String)}
 
       paths.each do |path|
@@ -223,7 +223,6 @@ module Sprockets
       end
 
     private
-
       def json_decode(obj)
         JSON.parse(obj, create_additions: false)
       end

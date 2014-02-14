@@ -35,13 +35,13 @@ module EnvironmentTests
   end
 
   test "extensions" do
-    ["coffee", "erb", "less", "sass", "scss", "str", "css", "js"].each do |ext|
+    ["coffee", "erb", "less", "sass", "scss", "css", "js"].each do |ext|
       assert @env.extensions.to_a.include?(".#{ext}"), "'.#{ext}' not in #{@env.extensions.inspect}"
     end
   end
 
   test "engine extensions" do
-    ["coffee", "erb", "less", "sass", "scss", "str"].each do |ext|
+    ["coffee", "erb", "less", "sass", "scss"].each do |ext|
       assert @env.engine_extensions.include?(".#{ext}")
     end
     ["css", "js"].each do |ext|
@@ -53,7 +53,7 @@ module EnvironmentTests
     ["css", "js"].each do |ext|
       assert @env.format_extensions.include?(".#{ext}")
     end
-    ["coffee", "erb", "less", "sass", "scss", "str"].each do |ext|
+    ["coffee", "erb", "less", "sass", "scss"].each do |ext|
       assert !@env.format_extensions.include?(".#{ext}")
     end
   end
@@ -137,11 +137,11 @@ module EnvironmentTests
     assert_equal ".c {}\n.d {}\n/*\n\n */\n\n", @env["mobile.css"].to_s
   end
 
-  test "find component.json in directory" do
+  test "find bower.json in directory" do
     assert_equal "var bower;\n", @env["bower.js"].to_s
   end
 
-  test "find multiple component.json in directory" do
+  test "find multiple bower.json in directory" do
     assert_equal "var qunit;\n", @env["qunit.js"].to_s
     assert_equal ".qunit {}\n", @env["qunit.css"].to_s
   end
@@ -193,35 +193,20 @@ module EnvironmentTests
 
   test "iterate over each entry" do
     entries = []
-    @env.each_entry(fixture_path("default")) do |path|
+    @env.recursive_stat(fixture_path("default")) do |path, stat|
       entries << path
     end
     assert_equal ENTRIES_IN_PATH, entries.length
-  end
 
-  test "each entry enumerator" do
-    enum = @env.each_entry(fixture_path("default"))
-    assert_equal ENTRIES_IN_PATH, enum.to_a.length
+    @env.recursive_stat(fixture_path("errors")) do |path, stat|
+    end
   end
 
   FILES_IN_PATH = 36
 
-  test "iterate over each file" do
-    files = []
-    @env.each_file do |filename|
-      files << filename
-    end
-    assert_equal FILES_IN_PATH, files.length
-  end
-
-  test "each file enumerator" do
-    enum = @env.each_file
-    assert_equal FILES_IN_PATH, enum.to_a.length
-  end
-
   test "iterate over each logical path" do
     paths = []
-    @env.each_logical_path do |logical_path|
+    @env.find_logical_paths do |logical_path|
       paths << logical_path
     end
     assert_equal FILES_IN_PATH, paths.length
@@ -236,7 +221,7 @@ module EnvironmentTests
   test "iterate over each logical path and filename" do
     paths = []
     filenames = []
-    @env.each_logical_path do |logical_path, filename|
+    @env.find_logical_paths do |logical_path, filename|
       paths << logical_path
       filenames << filename
     end
@@ -251,15 +236,15 @@ module EnvironmentTests
     assert filenames.any? { |p| p =~ /application.js.coffee/ }
   end
 
-  test "each logical path enumerator" do
-    enum = @env.each_logical_path
+  test "find logical path enumerator" do
+    enum = @env.find_logical_paths
     assert_kind_of String, enum.first
     assert_equal FILES_IN_PATH, enum.to_a.length
   end
 
   test "iterate over each logical path matching fnmatch filters" do
     paths = []
-    @env.each_logical_path("*.js") do |logical_path|
+    @env.find_logical_paths("*.js") do |logical_path|
       paths << logical_path
     end
 
@@ -270,7 +255,7 @@ module EnvironmentTests
 
   test "iterate over each logical path matches index files" do
     paths = []
-    @env.each_logical_path("coffee.js") do |logical_path|
+    @env.find_logical_paths("coffee.js") do |logical_path|
       paths << logical_path
     end
     assert paths.include?("coffee.js")
@@ -279,7 +264,7 @@ module EnvironmentTests
 
   test "each logical path enumerator matching fnmatch filters" do
     paths = []
-    enum = @env.each_logical_path("*.js")
+    enum = @env.find_logical_paths("*.js")
     enum.to_a.each do |logical_path|
       paths << logical_path
     end
@@ -291,7 +276,7 @@ module EnvironmentTests
 
   test "iterate over each logical path matching regexp filters" do
     paths = []
-    @env.each_logical_path(/.*\.js/) do |logical_path|
+    @env.find_logical_paths(/.*\.js/) do |logical_path|
       paths << logical_path
     end
 
@@ -302,7 +287,7 @@ module EnvironmentTests
 
   test "iterate over each logical path matching proc filters" do
     paths = []
-    @env.each_logical_path(proc { |fn| File.extname(fn) == '.js' }) do |logical_path|
+    @env.find_logical_paths(proc { |fn| File.extname(fn) == '.js' }) do |logical_path|
       paths << logical_path
     end
 
@@ -313,7 +298,7 @@ module EnvironmentTests
 
   test "iterate over each logical path matching proc filters with full path arg" do
     paths = []
-    @env.each_logical_path(proc { |_, fn| fn.match(fixture_path('default/mobile')) }) do |logical_path|
+    @env.find_logical_paths(proc { |_, fn| fn.match(fixture_path('default/mobile')) }) do |logical_path|
       paths << logical_path
     end
 
@@ -438,7 +423,7 @@ class TestEnvironment < Sprockets::TestCase
     assert_nil @env.js_compressor
   end
 
-  test "setting js compressor to tilt handler" do
+  test "setting js compressor to template handler" do
     assert_nil @env.js_compressor
     @env.js_compressor = Sprockets::UglifierCompressor
     assert_equal Sprockets::UglifierCompressor, @env.js_compressor
@@ -446,7 +431,7 @@ class TestEnvironment < Sprockets::TestCase
     assert_nil @env.js_compressor
   end
 
-  test "setting css compressor to tilt handler" do
+  test "setting css compressor to template handler" do
     assert_nil @env.css_compressor
     @env.css_compressor = Sprockets::SassCompressor
     assert_equal Sprockets::SassCompressor, @env.css_compressor
@@ -474,8 +459,7 @@ class TestEnvironment < Sprockets::TestCase
     old_digest = @env.digest
     old_asset_digest = @env["gallery.js"].digest
 
-    require 'digest/sha1'
-    @env.digest_class = Digest::SHA1
+    @env.digest_class = Digest::MD5
 
     assert old_digest != @env.digest
     assert old_asset_digest != @env["gallery.js"].digest
@@ -536,8 +520,12 @@ class TestEnvironment < Sprockets::TestCase
 
     sandbox filename do
       File.open(filename, 'w') { |f| f.puts "-->" }
-      assert_raises(ExecJS::RuntimeError) do
+      begin
         @env["tmp.js"].to_s
+      rescue ExecJS::Error => e
+        assert e
+      else
+        flunk "nothing raised"
       end
 
       File.open(filename, 'w') { |f| f.puts "->" }
@@ -566,7 +554,7 @@ class TestEnvironment < Sprockets::TestCase
     assert !@env.engines[".foo"]
     assert !@env.extensions.include?(".foo")
 
-    @env.register_engine ".foo", Tilt::StringTemplate
+    @env.register_engine ".foo", Sprockets::ERBTemplate
 
     assert @env.engines[".foo"]
     assert @env.extensions.include?(".foo")
@@ -579,7 +567,7 @@ class TestEnvironment < Sprockets::TestCase
     assert_nil e1.engines[".foo"]
     assert_nil e2.engines[".foo"]
 
-    e1.register_engine ".foo", Tilt::StringTemplate
+    e1.register_engine ".foo", Sprockets::ERBTemplate
 
     assert e1.engines[".foo"]
     assert_nil e2.engines[".foo"]
@@ -662,7 +650,7 @@ class TestIndex < Sprockets::TestCase
     assert_nil env.engines[".foo"]
     assert_nil index.engines[".foo"]
 
-    env.register_engine ".foo", Tilt::StringTemplate
+    env.register_engine ".foo", Sprockets::ERBTemplate
 
     assert env.engines[".foo"]
     assert_nil index.engines[".foo"]

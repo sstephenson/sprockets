@@ -1,6 +1,5 @@
 require 'pathname'
 require 'shellwords'
-require 'tilt'
 require 'yaml'
 
 module Sprockets
@@ -20,10 +19,9 @@ module Sprockets
   #      *= require "baz"
   #      */
   #
-  # The Processor is implemented as a `Tilt::Template` and is loosely
-  # coupled to Sprockets. This makes it possible to disable or modify
-  # the processor to do whatever you'd like. You could add your own
-  # custom directives or invent your own directive syntax.
+  # This makes it possible to disable or modify the processor to do whatever
+  # you'd like. You could add your own custom directives or invent your own
+  # directive syntax.
   #
   # `Environment#processors` includes `DirectiveProcessor` by default.
   #
@@ -36,7 +34,7 @@ module Sprockets
   #
   #     env.register_processor('text/css', MyProcessor)
   #
-  class DirectiveProcessor < Tilt::Template
+  class DirectiveProcessor < Template
     # Directives will only be picked up if they are in the header
     # of the source file. C style (/* */), JavaScript (//), and
     # Ruby (#) comments are supported.
@@ -71,8 +69,12 @@ module Sprockets
     attr_reader :pathname
     attr_reader :header, :body
 
-    def prepare
-      @pathname = Pathname.new(file)
+    # `context` is a `Context` instance with methods that allow you to
+    # access the environment and append to the bundle. See `Context`
+    # for the complete API.
+    def render(context)
+      @context = context
+      @pathname = context.pathname
 
       @header = data[HEADER_PATTERN, 0] || ""
       @body   = $' || data
@@ -80,19 +82,9 @@ module Sprockets
       @body  += "\n" if @body != "" && @body !~ /\n\Z/m
 
       @included_pathnames = []
-      @compat             = false
-    end
-
-    # Implemented for Tilt#render.
-    #
-    # `context` is a `Context` instance with methods that allow you to
-    # access the environment and append to the bundle. See `Context`
-    # for the complete API.
-    def evaluate(context, locals, &block)
-      @context = context
 
       @result = ""
-      @result.force_encoding(body.encoding) if body.respond_to?(:encoding)
+      @result.force_encoding(body.encoding)
 
       @has_written_body = false
 
@@ -181,10 +173,6 @@ module Sprockets
         unless @has_written_body
           @result << body
         end
-
-        if compat? && constants.any?
-          @result.gsub!(/<%=(.*?)%>/) { constants[$1.strip] }
-        end
       end
 
       # The `require` directive functions similar to Ruby's own `require`.
@@ -206,14 +194,6 @@ module Sprockets
       #     //= require "./bar"
       #
       def process_require_directive(path)
-        if @compat
-          if path =~ /<([^>]+)>/
-            path = $1
-          else
-            path = "./#{path}" unless relative?(path)
-          end
-        end
-
         context.require_asset(path)
       end
 
@@ -269,7 +249,7 @@ module Sprockets
 
           entries(root).each do |pathname|
             pathname = root.join(pathname)
-            if pathname.to_s == self.file
+            if pathname.to_s == self.pathname.to_s
               next
             elsif context.asset_requirable?(pathname)
               context.require_asset(pathname)
@@ -296,14 +276,18 @@ module Sprockets
 
           context.depend_on(root)
 
-          each_entry(root) do |pathname|
-            if pathname.to_s == self.file
+          required_paths = []
+          context.environment.recursive_stat(root) do |pathname, stat|
+            if pathname.to_s == self.pathname.to_s
               next
-            elsif stat(pathname).directory?
+            elsif stat.directory?
               context.depend_on(pathname)
             elsif context.asset_requirable?(pathname)
-              context.require_asset(pathname)
+              required_paths << pathname
             end
+          end
+          required_paths.sort_by(&:to_s).each do |pathname|
+            context.require_asset(pathname)
           end
         else
           # The path must be relative and start with a `./`.
@@ -354,40 +338,6 @@ module Sprockets
         context.stub_asset(path)
       end
 
-      # Enable Sprockets 1.x compat mode.
-      #
-      # Makes it possible to use the same JavaScript source
-      # file in both Sprockets 1 and 2.
-      #
-      #     //= compat
-      #
-      def process_compat_directive
-        @compat = true
-      end
-
-      # Checks if Sprockets 1.x compat mode enabled
-      def compat?
-        @compat
-      end
-
-      # Sprockets 1.x allowed for constant interpolation if a
-      # constants.yml was present. This is only available if
-      # compat mode is on.
-      def constants
-        if compat?
-          pathname = Pathname.new(context.root_path).join("constants.yml")
-          stat(pathname) ? YAML.load_file(pathname) : {}
-        else
-          {}
-        end
-      end
-
-      # `provide` is stubbed out for Sprockets 1.x compat.
-      # Mutating the path when an asset is being built is
-      # not permitted.
-      def process_provide_directive(path)
-      end
-
     private
       def relative?(path)
         path =~ /^\.($|\.?\/)/
@@ -399,10 +349,6 @@ module Sprockets
 
       def entries(path)
         context.environment.entries(path)
-      end
-
-      def each_entry(root, &block)
-        context.environment.each_entry(root, &block)
       end
   end
 end

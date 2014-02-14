@@ -1,25 +1,18 @@
 require 'sprockets_test'
 require 'sprockets/engines'
-require 'tilt'
 
-class AlertTemplate < Tilt::Template
+class AlertTemplate < Sprockets::Template
   def self.default_mime_type
     'application/javascript'
   end
 
-  def prepare
-  end
-
-  def evaluate(scope, locals, &block)
+  def render(context)
     "alert(#{data.inspect});"
   end
 end
 
-class StringTemplate < Tilt::Template
-  def prepare
-  end
-
-  def evaluate(scope, locals, &block)
+class StringTemplate < Sprockets::Template
+  def render(context)
     data.gsub(/#\{.*?\}/, "moo")
   end
 end
@@ -44,25 +37,6 @@ class TestEngines < Sprockets::TestCase
     asset = env["hello.alert"]
     assert_equal 'alert("Hello world!\n");', asset.to_s
     assert_equal 'application/javascript', asset.content_type
-  end
-
-  test "overriding an engine globally" do
-    env1 = new_environment
-    assert_equal %(console.log("Moo, #{RUBY_VERSION}");\n), env1["moo.js"].to_s
-
-    Sprockets.register_engine ".str", StringTemplate
-    env2 = new_environment
-    assert_equal %(console.log("Moo, moo");\n), env2["moo.js"].to_s
-  end
-
-  test "overriding an engine in an environment" do
-    env1 = new_environment
-    env2 = new_environment
-
-    env1.register_engine ".str", StringTemplate
-    assert_equal %(console.log("Moo, moo");\n), env1["moo.js"].to_s
-
-    assert_equal %(console.log("Moo, #{RUBY_VERSION}");\n), env2["moo.js"].to_s
   end
 
   def new_environment

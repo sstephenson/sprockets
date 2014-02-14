@@ -14,7 +14,7 @@ module Sprockets
     def initialize(environment, logical_path, pathname)
       super(environment, logical_path, pathname)
 
-      @processed_asset  = environment.find_asset(pathname, :bundle => false)
+      @processed_asset  = environment.find_asset(pathname, bundle: false)
       @required_assets  = @processed_asset.required_assets
       @dependency_paths = @processed_asset.dependency_paths
 
@@ -26,11 +26,9 @@ module Sprockets
 
       # Run bundle processors on concatenated source
       context = environment.context_class.new(environment, logical_path, pathname)
-      options = { :data => @source,
-                  :map => @map,
-                  :processors => environment.bundle_processors(content_type) }
-      @source = context.evaluate(pathname, options)
-      @map    = options[:map]
+
+      @source = context.evaluate(pathname, data: @source, map: @map,
+                  processors: environment.bundle_processors(content_type))
 
       @mtime  = (to_a + @dependency_paths).map(&:mtime).max
       @length = Rack::Utils.bytesize(source)
@@ -41,7 +39,7 @@ module Sprockets
     def init_with(environment, coder)
       super
 
-      @processed_asset = environment.find_asset(pathname, :bundle => false)
+      @processed_asset = environment.find_asset(pathname, bundle: false)
       @required_assets = @processed_asset.required_assets
 
       if @processed_asset.dependency_digest != coder['required_assets_digest']

@@ -1,21 +1,11 @@
-require 'tilt'
-
 module Sprockets
-  class ClosureCompressor < Tilt::Template
-    self.default_mime_type = 'application/javascript'
-
-    def self.engine_initialized?
-      defined?(::Closure::Compiler)
+  class ClosureCompressor < Template
+    def self.default_mime_type
+      'application/javascript'
     end
 
-    def initialize_engine
-      require_template_library 'closure-compiler'
-    end
-
-    def prepare
-    end
-
-    def evaluate(context, locals, &block)
+    def render(context)
+      require 'closure-compiler' unless defined? ::Closure::Compiler
       Closure::Compiler.new.compile(data)
     end
   end

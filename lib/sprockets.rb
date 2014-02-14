@@ -14,10 +14,14 @@ module Sprockets
   autoload :StaticAsset,             "sprockets/static_asset"
 
   # Processing
+  autoload :Template,                "sprockets/template"
   autoload :Context,                 "sprockets/context"
+  autoload :CoffeeScriptTemplate,    "sprockets/coffee_script_template"
   autoload :EcoTemplate,             "sprockets/eco_template"
   autoload :EjsTemplate,             "sprockets/ejs_template"
+  autoload :ERBTemplate,             "sprockets/erb_template"
   autoload :JstProcessor,            "sprockets/jst_processor"
+  autoload :LessTemplate,            "sprockets/less_template"
   autoload :Processor,               "sprockets/processor"
   autoload :SassCacheStore,          "sprockets/sass_cache_store"
   autoload :SassFunctions,           "sprockets/sass_functions"
@@ -86,11 +90,8 @@ module Sprockets
   require 'sprockets/yui_compressor'
   register_compressor 'application/javascript', :yui, YUICompressor
 
-  # Cherry pick the default Tilt engines that make sense for
-  # Sprockets. We don't need ones that only generate html like HAML.
-
   # Mmm, CoffeeScript
-  register_engine '.coffee', Tilt::CoffeeScriptTemplate
+  register_engine '.coffee', CoffeeScriptTemplate
 
   # JST engines
   register_engine '.jst',    JstProcessor
@@ -98,11 +99,10 @@ module Sprockets
   register_engine '.ejs',    EjsTemplate
 
   # CSS engines
-  register_engine '.less',   Tilt::LessTemplate
+  register_engine '.less',   LessTemplate
   register_engine '.sass',   SassTemplate
   register_engine '.scss',   ScssTemplate
 
   # Other
-  register_engine '.erb',    Tilt::ERBTemplate
-  register_engine '.str',    Tilt::StringTemplate
+  register_engine '.erb',    ERBTemplate
 end
