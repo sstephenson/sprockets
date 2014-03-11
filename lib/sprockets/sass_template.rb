@@ -37,10 +37,26 @@ module Sprockets
       }
 
       ::Sass::Engine.new(data, options).render
-    rescue ::Sass::SyntaxError => e
-      # Annotates exception message with parse line number
-      context.__LINE__ = e.sass_backtrace.first[:line]
-      raise e
+    rescue ::Sass::SyntaxError => exception
+      # Annotates exception message with erb comment if applies, and with
+      # parse line number
+      annotate_exception!(exception, context.pathname)
+      context.__LINE__ = exception.sass_backtrace.first[:line]
+      raise exception
+    end
+
+    def annotate_exception!(exception, pathname)
+      return false unless missing_erb_extension?(pathname)
+      exception.extend(Sprockets::EngineError)
+      exception.sprockets_annotation = "You are using erb in your file: " +
+        "#{pathname} but have not added the .erb extension.\n" +
+        "Please change the file name to #{pathname}.erb and try again."
+    end
+
+    def missing_erb_extension?(pathname)
+      erb_extension = pathname.to_s.split('/').last.match(/erb\Z/)
+      has_erb_tags = File.read(pathname) =~ /<%=?(.+)%>/
+      !erb_extension && has_erb_tags
     end
   end
 end

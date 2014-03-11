@@ -279,7 +279,8 @@ Extend your environment context with a custom method.
         location << ":#{@__LINE__}" if @__LINE__
 
         exception.extend(Sprockets::EngineError)
-        exception.sprockets_annotation = "  (in #{location})"
+        exception.sprockets_annotation ||= ''
+        exception.sprockets_annotation << "  (in #{location})"
       end
 
       def logger
