@@ -12,7 +12,7 @@ module Sprockets
 
     def find_relative(*args)
       engine = super
-      if engine && (filename = engine.options[:filename])
+      if @context && engine && (filename = engine.options[:filename])
         @context.depend_on(filename)
       end
       engine
@@ -20,10 +20,18 @@ module Sprockets
 
     def find(*args)
       engine = super
-      if engine && (filename = engine.options[:filename])
+      if @context && engine && (filename = engine.options[:filename])
         @context.depend_on(filename)
       end
       engine
+    end
+
+    def _dump(level)
+      @root
+    end
+
+    def self._load(root)
+      new(nil, root)
     end
   end
 end
