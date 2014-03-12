@@ -25,5 +25,9 @@ module Sprockets
     def path_to(key)
       key
     end
+
+    def marshal_dump
+      []
+    end
   end
 end

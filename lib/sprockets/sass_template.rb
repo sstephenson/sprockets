@@ -1,4 +1,12 @@
+require "delegate"
+
 module Sprockets
+  class Marshalable < SimpleDelegator
+    def marshal_dump
+      []
+    end
+  end
+
   # Also see `SassImporter` for more infomation.
   class SassTemplate < Template
     def self.default_mime_type
@@ -19,20 +27,18 @@ module Sprockets
         ::Sass::Script::Functions.send :include, Sprockets::SassFunctions
       end
 
-
       # Use custom importer that knows about Sprockets Caching
-      # cache_store = SassCacheStore.new(context.environment)
+      cache_store = SassCacheStore.new(context.environment)
 
       options = {
         :filename => context.pathname.to_s,
         :syntax => syntax,
-        :cache => false,
-        :read_cache => false,
+        :cache_store => cache_store,
         :importer => SassImporter.new(context, context.pathname),
         :load_paths => context.environment.paths.map { |path| SassImporter.new(context, path) },
         :sprockets => {
-          :context => context,
-          :environment => context.environment
+          :context => Marshalable.new(context),
+          :environment => Marshalable.new(context.environment)
         }
       }
 
