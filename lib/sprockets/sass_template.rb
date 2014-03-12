@@ -1,4 +1,12 @@
+require "delegate"
+
 module Sprockets
+  class Marshalable < SimpleDelegator
+    def marshal_dump
+      []
+    end
+  end
+
   # Also see `SassImporter` for more infomation.
   class SassTemplate < Template
     def self.default_mime_type
@@ -29,8 +37,8 @@ module Sprockets
         :importer => SassImporter.new(context, context.pathname),
         :load_paths => context.environment.paths.map { |path| SassImporter.new(context, path) },
         :sprockets => {
-          :context => context,
-          :environment => context.environment
+          :context => Marshalable.new(context),
+          :environment => Marshalable.new(context.environment)
         }
       }
 
