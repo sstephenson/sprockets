@@ -12,13 +12,6 @@ module Sprockets
     def render(context)
       require 'sass' unless defined? ::Sass
 
-      unless ::Sass::Script::Functions < Sprockets::SassFunctions
-        # Install custom functions. It'd be great if this didn't need to
-        # be installed globally, but could be passed into Engine as an
-        # option.
-        ::Sass::Script::Functions.send :include, Sprockets::SassFunctions
-      end
-
       # Use custom importer that knows about Sprockets Caching
       cache_store = SassCacheStore.new(context.environment)
 
@@ -33,8 +26,11 @@ module Sprockets
         }
       }
 
-      engine = ::Sass::Engine.new(data, options)
-      css = engine.render
+      engine, css = nil, nil
+      Sprockets::SassFunctions.define_functions(::Sass::Script::Functions) do
+        engine = ::Sass::Engine.new(data, options)
+        css = engine.render
+      end
 
       # Track all imported files
       engine.dependencies.each do |dependency|
