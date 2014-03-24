@@ -28,6 +28,8 @@ module Sprockets
         else
           nil
         end
+        rescue
+          nil
       end
 
       # Save value to cache
