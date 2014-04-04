@@ -99,7 +99,7 @@ module Rake
       @environment  = lambda { Sprockets::Environment.new(Dir.pwd) }
       @manifest     = lambda { Sprockets::Manifest.new(index, output) }
       @logger       = Logger.new($stderr)
-      @logger.level = Logger::INFO
+      @logger.level = Logger::WARN
       @keep         = 2
 
       yield self if block_given?
