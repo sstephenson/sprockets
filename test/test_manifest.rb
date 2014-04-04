@@ -68,6 +68,24 @@ class TestManifest < Sprockets::TestCase
     assert_equal path, manifest.path
   end
 
+  test "specify manifest directory with multiple manifest-*.json" do
+    dir  = Dir::tmpdir
+    path1 = File.join(dir, 'manifest-123.json')
+    path2 = File.join(dir, 'manifest-456.json')
+
+    system "rm -rf #{dir}/manifest*.json"
+    File.open(path1, 'w') { |f| f.write "{}" }
+    sleep 1
+    File.open(path2, 'w') { |f| f.write "{}" }
+
+    assert File.exist?(path1)
+    assert File.exist?(path2)
+    manifest = Sprockets::Manifest.new(@env, dir)
+
+    assert_equal dir, manifest.dir
+    assert_equal path2, manifest.path
+  end
+
   test "specify manifest directory and seperate location" do
     root  = File.join(Dir::tmpdir, 'public')
     dir   = File.join(root, 'assets')

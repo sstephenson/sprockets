@@ -48,7 +48,7 @@ module Sprockets
         # Find the first manifest.json in the directory
         paths = Dir[File.join(@dir, "manifest*.json")]
         if paths.any?
-          @path = paths.first
+          @path = paths.sort_by{ |f| File.mtime(f) }.last
         else
           @path = File.join(@dir, "manifest-#{SecureRandom.hex(16)}.json")
         end
