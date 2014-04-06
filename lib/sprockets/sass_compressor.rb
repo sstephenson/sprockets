@@ -10,7 +10,11 @@ module Sprockets
         :syntax => :scss,
         :cache => false,
         :read_cache => false,
-        :style => :compressed
+        :style => :compressed,
+        :sprockets => {
+          :context => context,
+          :environment => context.environment
+        }
       }).render
     end
   end

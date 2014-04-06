@@ -211,9 +211,30 @@ end
 class TestSassCompressor < TestBaseSass
   test "compress css" do
     silence_warnings do
+      context = Object.new
+      def context.environment()
+        Object.new
+      end
+      def context.asset_path(url)
+        url
+      end
       uncompressed = "p {\n  margin: 0;\n  padding: 0;\n}\n"
       compressed   = "p{margin:0;padding:0}\n"
-      assert_equal compressed, Sprockets::SassCompressor.new("foo.css") { uncompressed }.render(Object.new)
+      assert_equal compressed, Sprockets::SassCompressor.new("foo.css") { uncompressed }.render(context)
+    end
+  end
+  test "compress css that uses a helper function" do
+    silence_warnings do
+      context = Object.new
+      def context.environment()
+        Object.new
+      end
+      def context.asset_path(url)
+        url
+      end
+      uncompressed = "p {background: asset-url('foo');\n}\n"
+      compressed   = "p{background:url(foo)}\n"
+      assert_equal compressed, Sprockets::SassCompressor.new("foo.css") { uncompressed }.render(context)
     end
   end
 end
