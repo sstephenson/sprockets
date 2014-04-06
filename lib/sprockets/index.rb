@@ -35,6 +35,7 @@ module Sprockets
 
       # Initialize caches
       @assets  = {}
+      @asset_attributes = {}
       @digests = {}
     end
 
@@ -72,6 +73,10 @@ module Sprockets
 
         asset
       end
+    end
+
+    def attributes_for(path)
+      @asset_attributes[path] ||= super
     end
 
     protected

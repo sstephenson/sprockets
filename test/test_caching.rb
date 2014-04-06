@@ -45,6 +45,16 @@ class TestCaching < Sprockets::TestCase
     assert asset2.equal?(asset1)
   end
 
+  test "same index asset attributes are equal" do
+    index = @env1.index
+
+    asset_attributes1 = index.attributes_for('gallery.js')
+    asset_attributes2 = index.attributes_for('gallery.js')
+
+    assert asset_attributes1.equal?(asset_attributes2)
+    assert asset_attributes2.equal?(asset_attributes1)
+  end
+
   test "same environment instance is cached at logical and expanded path" do
     env = @env1
 
