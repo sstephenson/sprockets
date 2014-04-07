@@ -76,10 +76,18 @@ end
 
 class TestFileStore < Sprockets::TestCase
   def setup
-    @store = Sprockets::Cache::FileStore.new(File.join(Dir::tmpdir, "sprockets-file-store"))
+    @root = File.join(Dir::tmpdir, "sprockets-file-store")
+    @store = Sprockets::Cache::FileStore.new(@root)
   end
 
   include CacheStoreTests
+
+  def test_raise
+    @store["foo"] = "bar"
+    # messing up with the marshalled data
+    File.write(File.join(@root, "foo.cache"), "w") { |file| file.write("boom") }
+    assert_equal nil, @store["foo"]
+  end
 end
 
 class TestZeroFileStore < Sprockets::TestCase
