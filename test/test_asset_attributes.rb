@@ -19,6 +19,11 @@ class TestAssetAttributes < Sprockets::TestCase
     assert_equal "hello.js", pathname(fixture_path("default/hello.jst.ejs")).logical_path
   end
 
+  test "shadowed logical path" do
+    assert_equal "application.js", pathname_plus_shadowed_dir(fixture_path("default/application.js")).logical_path
+    assert_equal "application.js", pathname_plus_shadowed_dir(fixture_path("default-shadowed/application.js")).logical_path
+  end
+
   test "extensions" do
     assert_equal [],
       pathname("empty").extensions
@@ -94,6 +99,13 @@ class TestAssetAttributes < Sprockets::TestCase
     def pathname(path)
       env = Sprockets::Environment.new
       env.append_path fixture_path("default")
+      env.attributes_for(path)
+    end
+
+    def pathname_plus_shadowed_dir(path)
+      env = Sprockets::Environment.new
+      env.append_path fixture_path("default")
+      env.append_path fixture_path("default-shadowed")
       env.attributes_for(path)
     end
 end
