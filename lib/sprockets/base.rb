@@ -301,6 +301,10 @@ module Sprockets
         ">"
     end
 
+    def filtered?(asset, filters)
+      matches_filter(filters || [], asset.logical_path, asset.pathname.to_s)
+    end
+
     protected
       # Clear index after mutating state. Must be implemented by the subclass.
       def expire_index!
