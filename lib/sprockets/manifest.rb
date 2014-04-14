@@ -43,14 +43,14 @@ module Sprockets
       # Default dir to the directory of the path
       @dir ||= File.dirname(@path) if @path
 
-      # If directory is given w/o path, pick a random manifest.json location
-      if @dir && @path.nil?
+      # If the path is a directory, or dir is given w/o path, pick a random manifest.json location
+      if resembles_dir?(@path) || (@dir && @path.nil?)
         # Find the first manifest.json in the directory
-        paths = Dir[File.join(@dir, "manifest*.json")]
+        paths = Dir[File.join(@path || @dir, "manifest*.json")]
         if paths.any?
           @path = paths.first
         else
-          @path = File.join(@dir, "manifest-#{SecureRandom.hex(16)}.json")
+          @path = File.join(@path || dir, "manifest-#{SecureRandom.hex(16)}.json")
         end
       end
 
@@ -216,7 +216,7 @@ module Sprockets
 
       # Persist manfiest back to FS
       def save
-        ::FileUtils.mkdir_p dir
+        ::FileUtils.mkdir_p File.dirname(path)
         File.open(path, 'w') do |f|
           f.write json_encode(@data)
         end
@@ -245,6 +245,14 @@ module Sprockets
         start_time = Time.now.to_f
         yield
         ((Time.now.to_f - start_time) * 1000).to_i
+      end
+
+      # Given a path string, test:
+      # 1) does the string exist?
+      # 2) is there already a directory at the given location?
+      # 3) otherwise, does the file not already exist, and contain a dot (.) in the filename?
+      def resembles_dir?(path)
+        path && (File.directory?(path) || !(File.exist?(path) || File.basename(path) =~ /\./))
       end
   end
 end

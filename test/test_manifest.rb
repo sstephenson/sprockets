@@ -66,20 +66,45 @@ class TestManifest < Sprockets::TestCase
 
     assert_equal dir, manifest.dir
     assert_equal path, manifest.path
+
+    manifest.send(:save)
+    assert File.exist?(path)
   end
 
-  test "specify manifest directory and seperate location" do
+  test "specify manifest directory and separate path with filename" do
     root  = File.join(Dir::tmpdir, 'public')
     dir   = File.join(root, 'assets')
-    path  = File.join(root, 'manifest-123.json')
+    path  = File.join(root, 'manifest-dir', 'manifest-123.json')
 
     system "rm -rf #{root}"
     assert !File.exist?(root)
+    assert !File.exist?(path)
 
     manifest = Sprockets::Manifest.new(@env, dir, path)
 
     assert_equal dir, manifest.dir
     assert_equal path, manifest.path
+
+    manifest.send(:save)
+    assert File.exist?(path)
+  end
+
+  test "specify manifest directory and separate path without filename" do
+    root  = File.join(Dir::tmpdir, 'public')
+    dir   = File.join(root, 'assets')
+    path  = File.join(root, 'manifest-dir')
+
+    system "rm -rf #{root}"
+    assert !File.exist?(root)
+    assert !File.exist?(path)
+
+    manifest = Sprockets::Manifest.new(@env, dir, path)
+
+    assert_equal dir, manifest.dir
+    assert_match %r{#{path}/manifest-.*\.json$}, manifest.path
+
+    manifest.send(:save)
+    assert File.exist?(manifest.path)
   end
 
   test "compile asset" do
