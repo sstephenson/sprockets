@@ -91,7 +91,7 @@ module Sprockets
 
     protected
       def process_source(source)
-        header = source[HEADER_PATTERN, 0] || ""
+        header = source[self.class::HEADER_PATTERN, 0] || ""
         body   = $' || source
 
         header, directives = extract_directives(header)
