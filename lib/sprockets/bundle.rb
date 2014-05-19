@@ -1,4 +1,5 @@
 require 'set'
+require 'thread'
 
 module Sprockets
   # Public: Bundle processor takes a single file asset and prepends all the
@@ -47,15 +48,23 @@ module Sprockets
         deps, seen = Set.new, Set.new
         stack = paths.reverse
 
+        future_assets = Hash.new do |h, path|
+          h[path] = Thread.new { assets[path] }
+        end
+
         while path = stack.pop
           if seen.include?(path)
             deps.add(path)
           else
-            unless asset = assets[path]
+            unless asset = future_assets[path].value
               raise FileNotFound, "could not find #{path}"
             end
             stack.push(path)
             stack.concat(Array(asset.metadata[:required_paths]).reverse)
+
+            # Start up threads for any pending path on the stack
+            stack.each { |p| future_assets[p] }
+
             seen.add(path)
           end
         end
