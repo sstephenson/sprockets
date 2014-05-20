@@ -1,7 +1,7 @@
 require "sprockets_test"
 
 class DirectiveProcessorTests < Sprockets::TestCase
-  test "HEADER_PATTERN can be overridden in DirectiveProcessor subclass" do
+  test "HEADER_PATTERN can be overridden in subclasses" do
     class TestProcessor < Sprockets::DirectiveProcessor
       HEADER_PATTERN = /
         \A (
