@@ -42,8 +42,6 @@ module Sprockets
     def call(input)
       context = input[:environment].context_class.new(input)
 
-      dependencies = Set.new
-
       options = {
         filename: input[:filename],
         syntax: self.class.syntax,
@@ -52,7 +50,7 @@ module Sprockets
         sprockets: {
           context: context,
           environment: input[:environment],
-          dependencies: dependencies
+          dependencies: context.metadata[:dependency_paths]
         }
       }
 
@@ -61,10 +59,10 @@ module Sprockets
 
       # Track all imported files
       engine.dependencies.map do |dependency|
-        dependencies << dependency.options[:filename]
+        context.metadata[:dependency_paths] << dependency.options[:filename]
       end
 
-      context.to_hash.merge(data: css, dependency_paths: dependencies)
+      context.metadata.merge(data: css)
     end
   end
 

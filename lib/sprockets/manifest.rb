@@ -184,7 +184,10 @@ module Sprockets
           else
             logger.info "Writing #{target}"
             asset.write_to target
-            asset.write_to "#{target}.gz" if asset.is_a?(BundledAsset)
+            # TODO: Needs an api to check if content type is text or binary
+            if environment.encoding_for_mime_type(asset.content_type) != Encoding::BINARY
+              asset.write_to "#{target}.gz"
+            end
           end
 
           filenames << filename

@@ -10,6 +10,7 @@ class TestERBTemplate < Sprockets::TestCase
       filename: "foo.js.erb",
       content_type: 'application/javascript',
       data: "var data = <%= JSON.generate({foo: true}) %>;",
+      metadata: {},
       cache: Sprockets::Cache.new
     }
 
@@ -27,6 +28,7 @@ class TestERBTemplate < Sprockets::TestCase
       filename: "foo.js.erb",
       content_type: 'application/javascript',
       data: "<%= depend_on('#{path}') %>\nvar data = 'DATA';",
+      metadata: {},
       cache: Sprockets::Cache.new
     }
 
@@ -50,6 +52,7 @@ class TestERBTemplate < Sprockets::TestCase
       filename: "foo.js.erb",
       content_type: 'application/javascript',
       data: "var foo = <%= foo %>;",
+      metadata: {},
       cache: Sprockets::Cache.new
     }
 

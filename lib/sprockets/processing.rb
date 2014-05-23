@@ -198,30 +198,28 @@ module Sprockets
     #
     # Returns Hash.
     def process(processors, filename, logical_path, content_type, data)
+      metadata = {}
+
       input = {
         environment: self,
         cache: cache,
         filename: filename,
         logical_path: logical_path.chomp(File.extname(logical_path)),
         content_type: content_type,
-        data: data
+        data: data,
+        metadata: metadata
       }
-
-      required_paths   = []
-      stubbed_paths    = Set.new
-      dependency_paths = Set.new([filename])
 
       processors.each do |processor|
         begin
-          result = processor.call(input.merge(data: data))
+          result = processor.call(input.merge(data: data, metadata: metadata))
           case result
           when NilClass
             # noop
           when Hash
             data = result[:data]
-            required_paths.concat(Array(result[:required_paths]))
-            stubbed_paths.merge(Array(result[:stubbed_paths]))
-            dependency_paths.merge(Array(result[:dependency_paths]))
+            metadata = metadata.merge(result)
+            metadata.delete(:data)
           when String
             data = result
           else
@@ -230,17 +228,11 @@ module Sprockets
         end
       end
 
-      unless required_paths.include?(filename)
-        required_paths << filename
-      end
-
       {
         source: data,
         length: data.bytesize,
         digest: digest_class.hexdigest(data),
-        required_paths: required_paths,
-        stubbed_paths: stubbed_paths.to_a,
-        dependency_paths: dependency_paths.to_a
+        metadata: metadata
       }
     end
 

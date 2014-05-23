@@ -99,7 +99,7 @@ module Sprockets
           hash_key = asset_hash_cache_key(filename, digest, bundle)
 
           if hash = cache._get(hash_key)
-            digest, paths = hash.values_at(:dependency_digest, :dependency_paths)
+            digest, paths = hash[:metadata].values_at(:dependency_digest, :dependency_paths)
             if dependencies_hexdigest(paths) == digest
               return hash
             end

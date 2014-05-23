@@ -23,7 +23,7 @@ module Sprockets
       context  = input[:environment].context_class.new(input)
 
       data = @klass.new(filename) { data }.render(context)
-      context.to_hash.merge(data: data)
+      context.metadata.merge(data: data)
     end
   end
 end

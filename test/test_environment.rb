@@ -34,12 +34,6 @@ module EnvironmentTests
     Sprockets.clear_paths
   end
 
-  test "extensions" do
-    ["coffee", "erb", "sass", "scss", "css", "js"].each do |ext|
-      assert @env.extensions.to_a.include?(".#{ext}"), "'.#{ext}' not in #{@env.extensions.inspect}"
-    end
-  end
-
   test "eco templates" do
     asset = @env["goodbye.jst"]
     context = ExecJS.compile(asset.to_s)
@@ -58,14 +52,14 @@ module EnvironmentTests
   end
 
   test "lookup mime type" do
-    assert_equal "application/javascript", @env.mime_types(".js")
-    assert_equal "text/css", @env.mime_types(".css")
-    assert_equal nil, @env.mime_types(".foo")
+    assert_equal "application/javascript", @env.mime_types[".js"]
+    assert_equal "text/css", @env.mime_types[".css"]
+    assert_equal nil, @env.mime_types[".foo"]
   end
 
   test "lookup bundle processors" do
-    assert_equal 0, @env.bundle_processors('application/javascript').size
-    assert_equal 1, @env.bundle_processors('text/css').size
+    assert_equal 1, @env.bundle_processors('application/javascript').size
+    assert_equal 2, @env.bundle_processors('text/css').size
   end
 
   test "lookup compressors" do
@@ -97,6 +91,14 @@ module EnvironmentTests
     assert_equal fixture_path('default/gallery.css.erb'),
       @env.resolve(fixture_path('default/gallery'), content_type: 'text/css')
 
+    assert_equal fixture_path('default/manifest.js.yml'),
+      @env.resolve(fixture_path('default/manifest.js.yml'))
+    assert_equal fixture_path('default/manifest.js.yml'),
+      @env.resolve(fixture_path('default/manifest.js.yml'), content_type: 'text/yaml')
+
+    assert_raises(Sprockets::FileNotFound) do
+      @env.resolve(fixture_path('default/manifest.js.yml'), content_type: 'application/javascript')
+    end
     assert_raises(Sprockets::FileNotFound) do
       @env.resolve(fixture_path('default/jquery.tmpl'))
     end
@@ -143,6 +145,8 @@ module EnvironmentTests
       @env.resolve("jquery.tmpl.min")
     assert_equal fixture_path('default/jquery.tmpl.min.js'),
       @env.resolve("jquery.tmpl.min.js")
+    assert_equal fixture_path('default/manifest.js.yml'),
+      @env.resolve('manifest.js.yml')
 
     refute @env.resolve_all("null").first
     assert_raises(Sprockets::FileNotFound) do
@@ -165,6 +169,12 @@ module EnvironmentTests
       @env.resolve("jquery.tmpl.min", content_type: 'application/javascript')
     assert_equal fixture_path('default/jquery.tmpl.min.js'),
       @env.resolve("jquery.tmpl.min.js", content_type: 'application/javascript')
+    assert_equal fixture_path('default/manifest.js.yml'),
+      @env.resolve('manifest.js.yml', content_type: 'text/yaml')
+
+    assert_raises(Sprockets::FileNotFound) do
+      @env.resolve('manifest.js.yml', content_type: 'application/javascript')
+    end
 
     assert_raises(Sprockets::FileNotFound) do
       @env.resolve("gallery.js", content_type: "text/css")
@@ -298,7 +308,7 @@ module EnvironmentTests
       @env[fixture_path("default/mobile/a.js")].logical_path
   end
 
-  FILES_IN_PATH = 39
+  FILES_IN_PATH = 42
 
   test "iterate over each logical path" do
     paths = []
@@ -373,9 +383,9 @@ class TestEnvironment < Sprockets::TestCase
   end
 
   test "register mime type" do
-    assert !@env.mime_types("jst")
+    assert !@env.mime_types[".jst"]
     @env.register_mime_type("application/javascript", "jst")
-    assert_equal "application/javascript", @env.mime_types(".jst")
+    assert_equal "application/javascript", @env.mime_types[".jst"]
   end
 
   test "register bundle processor" do
@@ -575,16 +585,6 @@ class TestEnvironment < Sprockets::TestCase
     assert_raises(NameError) { e2.context_class.instance_method(:foo) }
   end
 
-  test "registering engine adds to the environments extensions" do
-    assert !@env.engines[".foo"]
-    assert !@env.extensions.include?(".foo")
-
-    @env.register_engine ".foo", Sprockets::ERBTemplate
-
-    assert @env.engines[".foo"]
-    assert @env.extensions.include?(".foo")
-  end
-
   test "seperate engines for each instance" do
     e1 = new_environment
     e2 = new_environment
@@ -603,6 +603,25 @@ class TestEnvironment < Sprockets::TestCase
     assert_equal "// =require \"notfound\"\n;\n", @env["missing_require.js"].to_s
   end
 
+  test "verify all absolute paths" do
+    env = new_environment
+    Dir.entries(Sprockets::TestCase::FIXTURE_ROOT).each do |dir|
+      unless %w( . ..).include?(dir)
+        env.append_path(fixture_path(dir))
+      end
+    end
+
+    # TODO: Expose environment helper for this
+    env.paths.each do |root|
+      env.stat_tree(root).each do |filename, stat|
+        next unless stat.file?
+
+        assert_equal filename, env.resolve_all(filename).first,
+          "Expected #{filename.inspect} to resolve to itself"
+      end
+    end
+  end
+
   test "verify all logical paths" do
     env = new_environment
     Dir.entries(Sprockets::TestCase::FIXTURE_ROOT).each do |dir|
@@ -613,57 +632,8 @@ class TestEnvironment < Sprockets::TestCase
 
     env.logical_paths.each do |logical_path, filename|
       assert_equal filename, env.resolve_all(logical_path).first,
-        "Expected #{logical_path.inspect} to resolve to #{filename}."
+        "Expected #{logical_path.inspect} to resolve to #{filename}"
     end
-  end
-
-  test "extensions" do
-    assert_equal({name: "empty", format_extname: nil, engine_extnames: []}, @env.extensions_for("empty"))
-    assert_equal({name: "gallery", format_extname: ".js", engine_extnames: []}, @env.extensions_for("gallery.js"))
-    assert_equal({name: "application", format_extname: ".js", engine_extnames: [".coffee"]}, @env.extensions_for("application.js.coffee"))
-    assert_equal({name: "project", format_extname: ".js", engine_extnames: [".coffee", ".erb"]}, @env.extensions_for("project.js.coffee.erb"))
-    assert_equal({name: "gallery", format_extname: ".css", engine_extnames: [".erb"]}, @env.extensions_for("gallery.css.erb"))
-    assert_equal({name: "gallery", format_extname: nil, engine_extnames: [".erb"]}, @env.extensions_for("gallery.erb"))
-    assert_equal({name: "gallery.foo", format_extname: nil, engine_extnames: []}, @env.extensions_for("gallery.foo"))
-    assert_equal({name: "jquery", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.js"))
-    assert_equal({name: "jquery.min", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.min.js"))
-    assert_equal({name: "jquery", format_extname: ".js", engine_extnames: [".erb"]}, @env.extensions_for("jquery.js.erb"))
-    assert_equal({name: "jquery.min", format_extname: ".js", engine_extnames: [".erb"]}, @env.extensions_for("jquery.min.js.erb"))
-    assert_equal({name: "jquery.min", format_extname: nil, engine_extnames: [".coffee"]}, @env.extensions_for("jquery.min.coffee"))
-    assert_equal({name: "jquery.tmpl", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.tmpl.js"))
-    assert_equal({name: "jquery.tmpl.min", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.tmpl.min.js"))
-    assert_equal({name: "jquery.csv", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.csv.js"))
-    assert_equal({name: "jquery.csv.min", format_extname: ".js", engine_extnames: []}, @env.extensions_for("jquery.csv.min.js"))
-    assert_equal({name: "jquery.csv.min", format_extname: ".js", engine_extnames: [".erb"]}, @env.extensions_for("jquery.csv.min.js.erb"))
-    assert_equal({name: "jquery.csv.min", format_extname: ".js", engine_extnames: [".coffee", ".erb"]}, @env.extensions_for("jquery.csv.min.js.coffee.erb"))
-    assert_equal({name: "jquery.js.min", format_extname: nil, engine_extnames: []}, @env.extensions_for("jquery.js.min"))
-    assert_equal({name: "sprite.css.embed", format_extname: nil, engine_extnames: []}, @env.extensions_for("sprite.css.embed"))
-
-    @env = Sprockets::Environment.new
-    @env.register_engine '.ms', Class.new
-    assert_equal({name: "foo", format_extname: nil, engine_extnames: [".jst", ".ms"]}, @env.extensions_for("foo.jst.ms"))
-  end
-
-  test "content type" do
-    assert_equal nil,
-      @env.content_type_of("empty")
-    assert_equal "application/javascript",
-      @env.content_type_of("gallery.js")
-    assert_equal "application/javascript",
-      @env.content_type_of("application.js.coffee")
-    assert_equal "application/javascript",
-      @env.content_type_of("project.js.coffee.erb")
-    assert_equal "text/css",
-      @env.content_type_of("gallery.css.erb")
-    assert_equal "application/javascript",
-      @env.content_type_of("jquery.tmpl.min.js")
-    assert_equal "application/javascript",
-      @env.content_type_of("application.coffee")
-
-    @env = Sprockets::Environment.new
-    @env.register_engine '.haml', proc {}, mime_type: 'text/html'
-    @env.register_engine '.ngt', proc {}, mime_type: 'application/javascript'
-    assert_equal "application/javascript", @env.content_type_of("foo.ngt.haml")
   end
 end
 
@@ -693,9 +663,9 @@ class TestCached < Sprockets::TestCase
     env.register_mime_type "application/javascript", ".jst"
     cached = env.cached
 
-    assert_equal "application/javascript", cached.mime_types(".jst")
+    assert_equal "application/javascript", cached.mime_types[".jst"]
     env.register_mime_type nil, ".jst"
-    assert_equal "application/javascript", cached.mime_types(".jst")
+    assert_equal "application/javascript", cached.mime_types[".jst"]
   end
 
   test "does not allow new bundle processors to be added" do

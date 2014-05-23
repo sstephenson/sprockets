@@ -1,5 +1,6 @@
 require 'sprockets_test'
 require 'tmpdir'
+require 'fileutils'
 
 module CacheStoreNullTests
   def test_read
@@ -102,14 +103,20 @@ end
 
 class TestFileStore < Sprockets::TestCase
   def setup
-    @root = File.join(Dir::tmpdir, "sprockets-file-store")
+    @root = Dir::mktmpdir "sprockets-file-store"
     @_store = Sprockets::Cache::FileStore.new(@root)
     @store = Sprockets::Cache.new(@_store)
   end
 
+  def teardown
+    FileUtils.rm_rf(@root)
+  end
+
   def test_inspect
-    store = Sprockets::Cache::FileStore.new(File.join(Dir::tmpdir, "sprockets-file-store-inspect"))
-    assert_equal "#<Sprockets::Cache::FileStore size=0/1000>", store.inspect
+    Dir::mktmpdir "sprockets-file-store-inspect" do |dir|
+      store = Sprockets::Cache::FileStore.new(dir)
+      assert_equal "#<Sprockets::Cache::FileStore size=0/1000>", store.inspect
+    end
   end
 
   def test_corrupted_read
@@ -124,13 +131,20 @@ end
 
 class TestZeroFileStore < Sprockets::TestCase
   def setup
-    @_store = Sprockets::Cache::FileStore.new(File.join(Dir::tmpdir, "sprockets-file-store-zero"), 0)
+    @tmpdir = Dir::mktmpdir "sprockets-file-store-zero"
+    @_store = Sprockets::Cache::FileStore.new(@tmpdir, 0)
     @store = Sprockets::Cache.new(@_store)
   end
 
+  def teardown
+    FileUtils.rm_rf @tmpdir
+  end
+
   def test_inspect
-    store = Sprockets::Cache::FileStore.new(File.join(Dir::tmpdir, "sprockets-file-store-inspect"), 0)
-    assert_equal "#<Sprockets::Cache::FileStore size=0/0>", store.inspect
+    Dir.mktmpdir "sprockets-file-store-inspect" do |dir|
+      store = Sprockets::Cache::FileStore.new(dir, 0)
+      assert_equal "#<Sprockets::Cache::FileStore size=0/0>", store.inspect
+    end
   end
 
   include CacheStoreNullTests

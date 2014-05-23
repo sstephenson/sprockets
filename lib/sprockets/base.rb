@@ -1,9 +1,7 @@
+require 'sprockets/asset'
 require 'sprockets/bower'
-require 'sprockets/bundled_asset'
 require 'sprockets/errors'
-require 'sprockets/processed_asset'
 require 'sprockets/server'
-require 'sprockets/static_asset'
 require 'pathname'
 
 module Sprockets
@@ -202,16 +200,7 @@ module Sprockets
           asset_hash = build_asset_hash(filename, options[:bundle])
         end
 
-        return unless asset_hash
-
-        case asset_hash[:type]
-        when 'bundled'
-          BundledAsset.new(asset_hash)
-        when 'processed'
-          ProcessedAsset.new(asset_hash)
-        when 'static'
-          StaticAsset.new(asset_hash)
-        end
+        Asset.new(asset_hash) if asset_hash
       end
     end
 
@@ -245,11 +234,6 @@ module Sprockets
       end
 
       def build_asset_hash(filename, bundle = true)
-        unless self.stat(filename)
-          # FIXME: Shouldn't need this check.
-          raise FileNotFound, "could not find #{filename}"
-        end
-
         content_type = content_type_of(filename) || 'application/octet-stream'
 
         attributes = {
@@ -264,30 +248,19 @@ module Sprockets
           postprocessors(content_type)
         bundled_processors = bundle_processors(content_type)
 
-        # If there are any processors to run on the pathname, use
-        # `BundledAsset`. Otherwise use `StaticAsset` and treat is as binary.
         if processed_processors.any? || bundled_processors.any?
-          if bundle == false
-            start = Utils.benchmark_start
-            asset = build_processed_asset_hash(attributes, processed_processors)
-            logger.debug do
-              ms  = "(#{Utils.benchmark_end(start)}ms)"
-              pid = "(pid #{Process.pid})"
-              "Compiled #{attributes[:logical_path]}  #{ms}  #{pid}"
-            end
-            asset
-          else
-            build_bundled_asset_hash(attributes, bundled_processors)
-          end
+          processors = bundle ? bundled_processors : processed_processors
+          build_processed_asset_hash(attributes, processors)
         else
           build_static_asset_hash(attributes)
         end
       end
 
       def build_processed_asset_hash(asset, processors)
-        filename  = asset[:filename]
-        encoding  = encoding_for_mime_type(asset[:content_type])
-        data      = read_unicode_file(filename, encoding)
+        filename = asset[:filename]
+        encoding = encoding_for_mime_type(asset[:content_type])
+        data     = read_unicode_file(filename, encoding)
+
         processed = process(
           processors,
           filename,
@@ -296,77 +269,27 @@ module Sprockets
           data
         )
 
-        asset.merge(processed).merge(
-          type: 'processed',
-          dependency_digest: dependencies_hexdigest(processed[:dependency_paths]),
-          mtime: processed[:dependency_paths].map { |path| stat(path).mtime }.max.to_i
-        )
-      end
+        # Ensure originally read file is marked as a dependency
+        processed[:metadata][:dependency_paths] = Set.new(processed[:metadata][:dependency_paths]).merge([filename])
 
-      def expand_asset_deps(paths, path, cache)
-        stack = []
-        stack.concat(paths.reverse)
-
-        deps = Set.new
-
-        seen = Set.new
-        seen.add(path)
-
-        while path = stack.pop
-          if seen.include?(path)
-            deps.add(path)
-          else
-            asset = cache[path] ||= build_asset_hash(path, false)
-            stack.concat(asset[:required_paths].reverse)
-            seen.add(path)
-          end
-        end
-
-        deps
-      end
-
-      def build_bundled_asset_hash(asset, processors)
-        filename = asset[:filename]
-        processed_asset = build_asset_hash(filename, false)
-
-        cache = {}
-        cache[filename] = processed_asset
-
-        required_paths = expand_asset_deps(processed_asset[:required_paths], filename, cache)
-        stubbed_paths  = expand_asset_deps(processed_asset[:stubbed_paths], filename, cache)
-        required_paths.subtract(stubbed_paths)
-
-        dependency_paths = Set.new
-        required_asset_hashes = required_paths.map do |path|
-          asset_hash = cache[path]
-          dependency_paths.merge(asset_hash[:dependency_paths])
-          asset_hash
-        end
-
-        asset.merge(process(
-          processors,
-          asset[:filename],
-          asset[:logical_path],
-          asset[:content_type],
-          required_asset_hashes.map { |h| h[:source] }.join
-        )).merge({
-          type: 'bundled',
-          required_asset_hashes: required_asset_hashes,
-          dependency_paths: dependency_paths.to_a,
-          dependency_digest: dependencies_hexdigest(dependency_paths),
-          mtime: required_asset_hashes.map { |h| h[:mtime] }.max
+        asset.merge(processed).merge({
+          mtime: processed[:metadata][:dependency_paths].map { |path| stat(path).mtime }.max.to_i,
+          metadata: processed[:metadata].merge(
+            dependency_digest: dependencies_hexdigest(processed[:metadata][:dependency_paths])
+          )
         })
       end
 
       def build_static_asset_hash(asset)
         stat = self.stat(asset[:filename])
         asset.merge({
-          type: 'static',
           length: stat.size,
           mtime: stat.mtime.to_i,
           digest: digest_class.file(asset[:filename]).hexdigest,
-          dependency_digest: dependencies_hexdigest([asset[:filename]]),
-          dependency_paths: [asset[:filename]]
+          metadata: {
+            dependency_paths: Set.new([asset[:filename]]),
+            dependency_digest: dependencies_hexdigest([asset[:filename]]),
+          }
         })
       end
   end

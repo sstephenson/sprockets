@@ -2,18 +2,14 @@ require 'sprockets/version'
 
 module Sprockets
   # Environment
+  autoload :Asset,                   'sprockets/asset'
   autoload :Base,                    'sprockets/base'
-  autoload :Environment,             'sprockets/environment'
   autoload :CachedEnvironment,       'sprockets/cached_environment'
+  autoload :Environment,             'sprockets/environment'
   autoload :Manifest,                'sprockets/manifest'
 
-  # Assets
-  autoload :Asset,                   'sprockets/asset'
-  autoload :BundledAsset,            'sprockets/bundled_asset'
-  autoload :ProcessedAsset,          'sprockets/processed_asset'
-  autoload :StaticAsset,             'sprockets/static_asset'
-
   # Processing
+  autoload :Bundle,                  'sprockets/bundle'
   autoload :CharsetNormalizer,       'sprockets/charset_normalizer'
   autoload :ClosureCompressor,       'sprockets/closure_compressor'
   autoload :CoffeeScriptTemplate,    'sprockets/coffee_script_template'
@@ -75,6 +71,8 @@ module Sprockets
 
   register_postprocessor 'application/javascript', LazyProxy.new { SafetyColons }
 
+  register_bundle_processor 'application/javascript', LazyProxy.new { Bundle }
+  register_bundle_processor 'text/css', LazyProxy.new { Bundle }
   register_bundle_processor 'text/css', LazyProxy.new { CharsetNormalizer }
 
   register_compressor 'text/css', :sass, LazyProxy.new { SassCompressor }

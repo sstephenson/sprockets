@@ -152,7 +152,7 @@ module Sprockets
 
     # Internal: Read unicode file respecting BOM.
     #
-    # Rreturns String or raises an EncodingError.
+    # Returns String or raises an EncodingError.
     def read_unicode_file(filename, external_encoding = Encoding.default_external)
       File.open(filename, "r:#{external_encoding}") do |f|
         f.read.tap do |data|

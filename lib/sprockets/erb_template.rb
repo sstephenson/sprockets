@@ -17,7 +17,7 @@ module Sprockets
       klass.class_eval(&@block) if @block
       engine.def_method(klass, :_evaluate_template, input[:filename])
       data = context._evaluate_template
-      context.to_hash.merge(data: data)
+      context.metadata.merge(data: data)
     end
   end
 end

@@ -79,22 +79,6 @@ class TestCaching < Sprockets::TestCase
     assert !asset1.equal?(asset2)
   end
 
-  test "proccessed and bundled assets are cached separately" do
-    env = @env1
-    assert_kind_of Sprockets::ProcessedAsset, env.find_asset('gallery.js', :bundle => false)
-    assert_kind_of Sprockets::BundledAsset,   env.find_asset('gallery.js', :bundle => true)
-    assert_kind_of Sprockets::ProcessedAsset, env.find_asset('gallery.js', :bundle => false)
-    assert_kind_of Sprockets::BundledAsset,   env.find_asset('gallery.js', :bundle => true)
-  end
-
-  test "proccessed and bundled assets are cached separately on cached" do
-    cached = @env1.cached
-    assert_kind_of Sprockets::ProcessedAsset, cached.find_asset('gallery.js', :bundle => false)
-    assert_kind_of Sprockets::BundledAsset,   cached.find_asset('gallery.js', :bundle => true)
-    assert_kind_of Sprockets::ProcessedAsset, cached.find_asset('gallery.js', :bundle => false)
-    assert_kind_of Sprockets::BundledAsset,   cached.find_asset('gallery.js', :bundle => true)
-  end
-
   test "keys are different if environment digest changes" do
     @env1['gallery.js']
     old_keys = @cache.keys.sort

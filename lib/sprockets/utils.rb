@@ -28,40 +28,40 @@ module Sprockets
     #
     # Returns a String SHA1 digest of the object.
     def hexdigest(obj)
-      buf   = ""
-      queue = [obj]
+      digest = Digest::SHA1.new
+      queue  = [obj]
 
       while queue.length > 0
         obj = queue.shift
         klass = obj.class
 
         if klass == String
-          buf << 'String'
-          buf << obj
+          digest << 'String'
+          digest << obj
         elsif klass == Symbol
-          buf << 'Symbol'
-          buf << obj.to_s
+          digest << 'Symbol'
+          digest << obj.to_s
         elsif klass == Fixnum
-          buf << 'Fixnum'
-          buf << obj.to_s
+          digest << 'Fixnum'
+          digest << obj.to_s
         elsif klass == TrueClass
-          buf << 'TrueClass'
+          digest << 'TrueClass'
         elsif klass == FalseClass
-          buf << 'FalseClass'
+          digest << 'FalseClass'
         elsif klass == NilClass
-          buf << 'NilClass'
+          digest << 'NilClass'
         elsif klass == Array
-          buf << 'Array'
+          digest << 'Array'
           queue.concat(obj)
         elsif klass == Hash
-          buf << 'Hash'
+          digest << 'Hash'
           queue.concat(obj.sort)
         else
           raise TypeError, "couldn't digest #{klass}"
         end
       end
 
-      ::Digest::SHA1.hexdigest(buf)
+      digest.hexdigest
     end
 
     def benchmark_start

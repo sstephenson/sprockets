@@ -1,6 +1,7 @@
 require 'digest/md5'
 require 'fileutils'
 require 'logger'
+require 'tempfile'
 
 module Sprockets
   class Cache
@@ -37,6 +38,7 @@ module Sprockets
         @size = find_caches.size
         @max_size = max_size
         @logger = logger
+        @tmpdir = Dir.tmpdir
       end
 
       # Public: Retrieve value from cache.
@@ -86,7 +88,7 @@ module Sprockets
         exists = File.exist?(path)
 
         # Write data
-        PathUtils.atomic_write(path) { |f| Marshal.dump(value, f) }
+        PathUtils.atomic_write(path, @tmpdir) { |f| Marshal.dump(value, f) }
 
         # GC if necessary
         @size += 1 unless exists

@@ -86,7 +86,17 @@ module Sprockets
       end
 
       data, directives = result.values_at(:data, :directives)
-      process_directives(directives).merge(data: data)
+
+      @required_paths   = Set.new(input[:metadata][:required_paths])
+      @stubbed_paths    = Set.new(input[:metadata][:stubbed_paths])
+      @dependency_paths = Set.new(input[:metadata][:dependency_paths])
+
+      process_directives(directives)
+
+      { data: data,
+        required_paths: @required_paths,
+        stubbed_paths: @stubbed_paths,
+        dependency_paths: @dependency_paths }
     end
 
     protected
@@ -155,10 +165,6 @@ module Sprockets
       #     env.register_processor('text/css', DirectiveProcessor)
       #
       def process_directives(directives)
-        @required_paths   = []
-        @stubbed_paths    = Set.new
-        @dependency_paths = Set.new
-
         directives.each do |line_number, name, *args|
           begin
             send("process_#{name}_directive", *args)
@@ -167,10 +173,6 @@ module Sprockets
             raise e
           end
         end
-
-        { required_paths: @required_paths,
-          stubbed_paths: @stubbed_paths,
-          dependency_paths: @dependency_paths }
       end
 
       # The `require` directive functions similar to Ruby's own `require`.
@@ -305,8 +307,7 @@ module Sprockets
       #
       def process_depend_on_asset_directive(path)
         if asset = @environment.find_asset(resolve(path))
-          # TODO: Expose public api for getting asset's dependency paths
-          @dependency_paths.merge(asset.send(:dependency_paths))
+          @dependency_paths.merge(asset.metadata[:dependency_paths])
         end
       end
 
