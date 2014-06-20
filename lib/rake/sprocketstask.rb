@@ -5,7 +5,7 @@ require 'sprockets'
 require 'logger'
 
 module Rake
-  # Simple Sprockets compilation Rake task macro.
+  # Sprockets compilation Rake task macro.
   #
   #   Rake::SprocketsTask.new do |t|
   #     t.environment = Sprockets::Environment.new
