@@ -83,12 +83,6 @@ module Sprockets
         ]
       end
 
-      def build_asset_hash_for_digest(*args)
-        cache.fetch(asset_hash_cache_key(*args)) do
-          super
-        end
-      end
-
       # Cache asset building in memory and in persisted cache.
       def build_asset_hash(filename, bundle = true)
         digest_key = asset_digest_cache_key(filename, bundle)
