@@ -39,10 +39,7 @@ module Sprockets
       end
 
       # Look up the asset.
-      options = {}
-      options[:bundle] = !body_only?(env)
-      options[:if_match] = fingerprint if fingerprint
-      asset = find_asset(path, options)
+      asset = find_asset(path, bundle: !body_only?(env))
 
       # `find_asset` returns nil if the asset doesn't exist
       if asset.nil?
@@ -210,9 +207,9 @@ module Sprockets
           headers["Last-Modified"]  = asset.mtime.httpdate
           headers["ETag"]           = etag(asset)
 
-          # If the request url contains a fingerprint, set a long
+          # If the request url contains the correct fingerprint, set a long
           # expires on the response
-          if path_fingerprint(env["PATH_INFO"])
+          if asset.digest == path_fingerprint(env["PATH_INFO"])
             headers["Cache-Control"] << ", max-age=31536000"
 
           # Otherwise set `must-revalidate` since the asset could be modified.

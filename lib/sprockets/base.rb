@@ -148,15 +148,8 @@ module Sprockets
         filename = resolve_all(path, accept: options[:accept]).first
       end
 
-      if filename
-        if options[:if_match]
-          asset_hash = build_asset_hash_for_digest(filename, options[:if_match], options[:bundle])
-        else
-          asset_hash = build_asset_hash(filename, options[:bundle])
-        end
-
-        Asset.new(asset_hash) if asset_hash
-      end
+      asset_hash = build_asset_hash(filename, options[:bundle]) if filename
+      Asset.new(asset_hash) if asset_hash
     end
 
     # Preferred `find_asset` shorthand.
@@ -179,13 +172,6 @@ module Sprockets
       # the subclass.
       def expire_cache!
         raise NotImplementedError
-      end
-
-      def build_asset_hash_for_digest(filename, digest, bundle)
-        asset_hash = build_asset_hash(filename, bundle)
-        if asset_hash[:digest] == digest
-          asset_hash
-        end
       end
 
       def build_asset_hash(filename, bundle = true)
