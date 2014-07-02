@@ -184,7 +184,19 @@ module Sprockets
 
       # Returns a 304 Not Modified response tuple
       def not_modified_response(asset, env)
-        [ 304, {}, [] ]
+        headers = {}
+        headers["Cache-Control"]  = "public"
+
+        # If the request url contains a fingerprint, set a long
+        # expires on the response
+        if path_fingerprint(env["PATH_INFO"])
+          headers["Cache-Control"] << ", max-age=31536000"
+
+        # Otherwise set `must-revalidate` since the asset could be modified.
+        else
+          headers["Cache-Control"] << ", must-revalidate"
+        end
+        [ 304, headers, [] ]
       end
 
       # Returns a 200 OK response tuple
