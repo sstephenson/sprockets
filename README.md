@@ -340,7 +340,7 @@ within any subdependencies.
 
 # Development #
 
-## Contributing ##
+## Contributing [![Inline docs](http://inch-ci.org/github/sstephenson/sprockets.png?branch=master)](http://inch-ci.org/github/sstephenson/sprockets) ##
 
 The Sprockets source code is [hosted on
 GitHub](https://github.com/sstephenson/sprockets). You can check out a
