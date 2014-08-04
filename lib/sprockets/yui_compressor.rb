@@ -1,3 +1,4 @@
+require 'thread'
 require 'yui/compressor'
 
 module Sprockets
@@ -15,6 +16,7 @@ module Sprockets
   #
   class YUICompressor
     VERSION = '1'
+    LOCK = Mutex.new
 
     def self.call(*args)
       new.call(*args)
@@ -37,12 +39,22 @@ module Sprockets
       when 'application/javascript'
         key = @cache_key + [input[:content_type], input[:data]]
         input[:cache].fetch(key) do
-          ::YUI::JavaScriptCompressor.new(@options).compress(data)
+          begin
+            LOCK.lock
+            ::YUI::JavaScriptCompressor.new(@options).compress(data)
+          ensure
+            LOCK.unlock
+          end
         end
       when 'text/css'
         key = @cache_key + [input[:content_type], input[:data]]
         input[:cache].fetch(key) do
-          ::YUI::CssCompressor.new(@options).compress(data)
+          begin
+            LOCK.lock
+            ::YUI::CssCompressor.new(@options).compress(data)
+          ensure
+            LOCK.unlock
+          end
         end
       else
         data

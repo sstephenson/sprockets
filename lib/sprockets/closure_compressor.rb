@@ -1,4 +1,5 @@
 require 'closure-compiler'
+require 'thread'
 
 module Sprockets
   # Public: Closure Compiler minifier.
@@ -15,6 +16,7 @@ module Sprockets
   #
   class ClosureCompressor
     VERSION = '1'
+    LOCK = Mutex.new
 
     def self.call(*args)
       new.call(*args)
@@ -33,7 +35,12 @@ module Sprockets
 
     def call(input)
       input[:cache].fetch(@cache_key + [input[:data]]) do
-        @compiler.compile(input[:data])
+        begin
+          LOCK.lock
+          @compiler.compile(input[:data])
+        ensure
+          LOCK.unlock
+        end
       end
     end
   end

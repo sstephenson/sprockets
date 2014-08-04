@@ -1,4 +1,5 @@
 require 'ejs'
+require 'thread'
 
 module Sprockets
   # Template engine class for the EJS compiler. Depends on the `ejs` gem.
@@ -9,6 +10,7 @@ module Sprockets
   #
   module EjsTemplate
     VERSION = '1'
+    LOCK = Mutex.new
 
     # Compile template data with EJS compiler.
     #
@@ -21,7 +23,12 @@ module Sprockets
       data = input[:data]
       key  = ['EjsTemplate', VERSION, data]
       input[:cache].fetch(key) do
-        ::EJS.compile(data)
+        begin
+          LOCK.lock
+          ::EJS.compile(data)
+        ensure
+          LOCK.unlock
+        end
       end
     end
   end

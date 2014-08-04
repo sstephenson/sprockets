@@ -1,4 +1,5 @@
 require 'uglifier'
+require 'thread'
 
 module Sprockets
   # Public: Uglifier/Uglify compressor.
@@ -15,6 +16,7 @@ module Sprockets
   #
   class UglifierCompressor
     VERSION = '1'
+    LOCK = Mutex.new
 
     def self.call(*args)
       new.call(*args)
@@ -43,7 +45,12 @@ module Sprockets
     def call(input)
       data = input[:data]
       input[:cache].fetch(@cache_key + [data]) do
-        @uglifier.compile(data)
+        begin
+          LOCK.lock
+          @uglifier.compile(data)
+        ensure
+          LOCK.unlock
+        end
       end
     end
   end
