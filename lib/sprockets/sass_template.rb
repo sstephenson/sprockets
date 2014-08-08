@@ -1,3 +1,4 @@
+require 'monitor'
 require 'rack/utils'
 require 'sass'
 
@@ -10,6 +11,8 @@ module Sprockets
   #   https://github.com/rails/sass-rails
   #
   class SassTemplate
+    LOCK = Monitor.new
+
     # Internal: Defines default sass syntax to use. Exposed so the ScssTemplate
     # may override it.
     def self.syntax
@@ -51,18 +54,20 @@ module Sprockets
         }
       }
 
-      engine = ::Sass::Engine.new(input[:data], options)
+      LOCK.synchronize do
+        engine = ::Sass::Engine.new(input[:data], options)
 
-      css = Utils.module_include(::Sass::Script::Functions, @functions) do
-        engine.render
+        css = Utils.module_include(::Sass::Script::Functions, @functions) do
+          engine.render
+        end
+
+        # Track all imported files
+        engine.dependencies.map do |dependency|
+          context.metadata[:dependency_paths] << dependency.options[:filename]
+        end
+
+        context.metadata.merge(data: css)
       end
-
-      # Track all imported files
-      engine.dependencies.map do |dependency|
-        context.metadata[:dependency_paths] << dependency.options[:filename]
-      end
-
-      context.metadata.merge(data: css)
     end
 
     # Public: Functions injected into Sass context during Sprockets evaluation.

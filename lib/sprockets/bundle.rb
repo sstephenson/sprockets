@@ -1,3 +1,4 @@
+require 'monitor'
 require 'set'
 
 module Sprockets
@@ -12,36 +13,40 @@ module Sprockets
   #
   # Also see DirectiveProcessor.
   class Bundle
+    LOCK = Monitor.new
+
     def self.call(input)
       new.call(input)
     end
 
     def call(input)
-      env = input[:environment]
-      filename = input[:filename]
+      LOCK.synchronize do
+        env = input[:environment]
+        filename = input[:filename]
 
-      type = input[:content_type]
+        type = input[:content_type]
 
-      assets = Hash.new do |h, path|
-        h[path] = env.find_asset(path, bundle: false, accept: type)
+        assets = Hash.new do |h, path|
+          h[path] = env.find_asset(path, bundle: false, accept: type)
+        end
+
+        required_paths = expand_required_paths(env, assets, [filename])
+        stubbed_paths  = expand_required_paths(env, assets, Array(assets[filename].metadata[:stubbed_paths]))
+        required_paths.subtract(stubbed_paths)
+
+        dependency_paths = required_paths.inject(Set.new) do |set, path|
+          set.merge(assets[path].metadata[:dependency_paths])
+        end
+
+        data = join_assets(required_paths.map { |path| assets[path].to_s })
+
+        # Deprecated: For Asset#to_a
+        required_asset_hashes = required_paths.map { |path| assets[path].to_hash }
+
+        { data: data,
+          required_asset_hashes: required_asset_hashes,
+          dependency_paths: dependency_paths }
       end
-
-      required_paths = expand_required_paths(env, assets, [filename])
-      stubbed_paths  = expand_required_paths(env, assets, Array(assets[filename].metadata[:stubbed_paths]))
-      required_paths.subtract(stubbed_paths)
-
-      dependency_paths = required_paths.inject(Set.new) do |set, path|
-        set.merge(assets[path].metadata[:dependency_paths])
-      end
-
-      data = join_assets(required_paths.map { |path| assets[path].to_s })
-
-      # Deprecated: For Asset#to_a
-      required_asset_hashes = required_paths.map { |path| assets[path].to_hash }
-
-      { data: data,
-        required_asset_hashes: required_asset_hashes,
-        dependency_paths: dependency_paths }
     end
 
     private

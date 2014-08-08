@@ -1,4 +1,5 @@
 require 'delegate'
+require 'monitor'
 
 module Sprockets
   # Deprecated: Wraps legacy process Procs with new processor call signature.
@@ -9,6 +10,8 @@ module Sprockets
   #       proc { |context, data| data.gsub(...) })
   #
   class LegacyProcProcessor < Delegator
+    LOCK = Monitor.new
+
     def initialize(name, proc)
       @name = name
       @proc = proc
@@ -28,8 +31,11 @@ module Sprockets
 
     def call(input)
       context = input[:environment].context_class.new(input)
-      data = @proc.call(context, input[:data])
-      context.metadata.merge(data: data)
+
+      LOCK.synchronize do
+        data = @proc.call(context, input[:data])
+        context.metadata.merge(data: data)
+      end
     end
   end
 end

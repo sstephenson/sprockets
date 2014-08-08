@@ -1,3 +1,4 @@
+require 'monitor'
 require 'set'
 require 'shellwords'
 
@@ -35,6 +36,8 @@ module Sprockets
   #
   class DirectiveProcessor
     VERSION = '1'
+
+    LOCK = Monitor.new
 
     # Directives will only be picked up if they are in the header
     # of the source file. C style (/* */), JavaScript (//), and
@@ -90,7 +93,9 @@ module Sprockets
       @stubbed_paths    = Set.new(input[:metadata][:stubbed_paths])
       @dependency_paths = Set.new(input[:metadata][:dependency_paths])
 
-      process_directives(directives)
+      LOCK.synchronize do
+        process_directives(directives)
+      end
 
       { data: data,
         required_paths: @required_paths,

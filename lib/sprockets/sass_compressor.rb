@@ -1,3 +1,4 @@
+require 'monitor'
 require 'sass'
 
 module Sprockets
@@ -15,6 +16,7 @@ module Sprockets
   #
   class SassCompressor
     VERSION = '1'
+    LOCK = Monitor.new
 
     def self.call(*args)
       new.call(*args)
@@ -39,7 +41,10 @@ module Sprockets
           read_cache: false,
           style: :compressed
         }.merge(@options)
-        ::Sass::Engine.new(data, options).render
+
+        LOCK.synchronize do
+          ::Sass::Engine.new(data, options).render
+        end
       end
     end
   end

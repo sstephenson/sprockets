@@ -1,4 +1,5 @@
 require 'eco'
+require 'thread'
 
 module Sprockets
   # Template engine class for the Eco compiler. Depends on the `eco` gem.
@@ -10,6 +11,7 @@ module Sprockets
   #
   module EcoTemplate
     VERSION = '1'
+    LOCK = Mutex.new
 
     # Compile template data with Eco compiler.
     #
@@ -22,7 +24,12 @@ module Sprockets
       data = input[:data]
       key  = ['EcoTemplate', ::Eco::Source::VERSION, VERSION, data]
       input[:cache].fetch(key) do
-        ::Eco.compile(data)
+        begin
+          LOCK.lock
+          ::Eco.compile(data)
+        ensure
+          LOCK.unlock
+        end
       end
     end
   end
