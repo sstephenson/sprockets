@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'tempfile'
+require 'pathname'
 
 module Sprockets
   # Internal: File and path related utilities. Mixed into Environment.
@@ -83,7 +84,9 @@ module Sprockets
     # Returns relative String path if subpath is a subpath of path, or nil if
     # subpath is outside of path.
     def split_subpath(path, subpath)
-      path = File.join(path, '')
+      path = Pathname.new(path).cleanpath.to_s + "/"
+      subpath = Pathname.new(subpath).cleanpath.to_s
+
       if subpath.start_with?(path)
         subpath[path.length..-1]
       else

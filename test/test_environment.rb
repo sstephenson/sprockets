@@ -402,6 +402,17 @@ $app.run(function($templateCache) {
     end
   end
 
+  test "asset absolute path is smart enough to expand /../" do
+    env = Sprockets::Environment.new(".") do |env|
+      env.append_path(File.join(fixture_path('default'), 'app'))
+      env.cache = {}
+    end
+
+    assert_raises Sprockets::FileOutsidePaths do
+      env[fixture_path("default/app/../gallery.js")]
+    end
+  end
+
   test "asset logical path for absolute path" do
     assert_equal "gallery.js",
       @env[fixture_path("default/gallery.js")].logical_path

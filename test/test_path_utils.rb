@@ -72,6 +72,10 @@ class TestPathUtils < Sprockets::TestCase
     refute paths_split([fixture_path("default")], fixture_path("other/app/application.js"))
   end
 
+  test "path with /../" do
+    assert_nil paths_split([fixture_path("default")], fixture_path("default/../../../../application.js"))
+  end
+
   test "path extensions" do
     assert_equal [".txt"], path_extnames("hello.txt")
     assert_equal [".txt"], path_extnames("sub/hello.txt")
