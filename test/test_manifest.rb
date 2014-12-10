@@ -338,7 +338,7 @@ class TestManifest < Sprockets::TestCase
       @manifest.compile('application.js')
       assert File.exist?("#{@dir}/#{new_digest_path3}")
 
-      @manifest.clean(1)
+      @manifest.clean(1, 0)
 
       assert !File.exist?("#{@dir}/#{digest_path}")
       assert !File.exist?("#{@dir}/#{new_digest_path1}")
