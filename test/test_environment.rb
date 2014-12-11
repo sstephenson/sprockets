@@ -772,6 +772,29 @@ class TestEnvironment < Sprockets::TestCase
   end
 end
 
+class TestBower < Sprockets::TestCase
+  def new_environment
+    Sprockets::Environment.new(fixture_path('bower')) do |env|
+      env.append_path(fixture_path('default'))
+      env.cache = {}
+      env.use_bowerrc
+      yield env if block_given?
+    end
+  end
+
+  def setup
+    @env = new_environment
+  end
+
+  test "includes path listed in .bowerrc" do
+    assert_equal [fixture_path("bower/bower/assets"), fixture_path("default")], @env.paths.to_a
+  end
+
+  test "finds files in bower path" do
+    assert @env.find_asset("bowerrc.js")
+  end
+end
+
 class TestCached < Sprockets::TestCase
   include EnvironmentTests
 
