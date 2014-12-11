@@ -61,7 +61,7 @@ module Sprockets
     # Returns nothing.
 
     def use_bowerrc
-      POSSIBLE_BOWER_RCS.each { |fn| read_bowerrc(fn) if self.file?(fn) }
+      POSSIBLE_BOWER_RCS.map { |file| File.join(@root, file) }.each { |fn| read_bowerrc(fn) if self.file?(fn) }
     end
 
     # Internal: Read bower configuration file to find the bower path.
@@ -73,10 +73,11 @@ module Sprockets
     def read_bowerrc(filename)
       bower = JSON.parse(File.read(filename))
       directory = bower['directory']
-      stat = self.stat(directory)
+      stat = self.stat(File.join(@root, directory))
 
       if stat && stat.directory?
         prepend_path(directory)
+      else
       end
     end
   end
