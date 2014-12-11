@@ -22,6 +22,7 @@ class TestPathUtils < Sprockets::TestCase
   test "entries" do
     assert_equal [
       "asset",
+      "bower",
       "compass",
       "context",
       "default",
