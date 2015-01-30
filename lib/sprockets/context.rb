@@ -1,4 +1,3 @@
-require 'pathname'
 require 'rack/utils'
 require 'set'
 require 'sprockets/errors'
@@ -19,10 +18,7 @@ module Sprockets
   # The `Context` also collects dependencies declared by
   # assets. See `DirectiveProcessor` for an example of this.
   class Context
-    attr_reader :environment, :filename, :pathname
-
-    # Deprecated
-    attr_accessor :__LINE__
+    attr_reader :environment, :filename
 
     def initialize(input)
       @environment  = input[:environment]
@@ -31,7 +27,6 @@ module Sprockets
       @logical_path = input[:name]
       @filename     = input[:filename]
       @dirname      = File.dirname(@filename)
-      @pathname     = Pathname.new(@filename)
       @content_type = input[:content_type]
 
       @required     = Set.new(@metadata[:required])
@@ -108,7 +103,7 @@ module Sprockets
     # the dependency file with invalidate the cache of the
     # source file.
     def depend_on(path)
-      resolve(path, compat: false)
+      resolve(path)
       nil
     end
 
@@ -120,7 +115,7 @@ module Sprockets
     # file. Unlike `depend_on`, this will include recursively include
     # the target asset's dependencies.
     def depend_on_asset(path)
-      load(resolve(path, compat: false))
+      load(resolve(path))
     end
 
     # `require_asset` declares `path` as a dependency of the file. The
@@ -133,7 +128,7 @@ module Sprockets
     #     <%= require_asset "#{framework}.js" %>
     #
     def require_asset(path)
-      @required << resolve(path, accept: @content_type, bundle: false, compat: false)
+      @required << resolve(path, accept: @content_type, bundle: false)
       nil
     end
 
@@ -141,7 +136,7 @@ module Sprockets
     # `path` must be an asset which may or may not already be included
     # in the bundle.
     def stub_asset(path)
-      @stubbed << resolve(path, accept: @content_type, bundle: false, compat: false)
+      @stubbed << resolve(path, accept: @content_type, bundle: false)
       nil
     end
 

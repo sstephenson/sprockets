@@ -58,7 +58,7 @@ module Sprockets
 
     # Find asset by logical path or expanded path.
     def find_asset(path, options = {})
-      uri, _ = resolve(path, options.merge(compat: false))
+      uri, _ = resolve(path, options)
       if uri
         load(uri)
       end

@@ -13,8 +13,7 @@ module Sprockets
     # attributes - Hash of ivars
     #
     # Returns Asset.
-    def initialize(environment, attributes = {})
-      @environment  = environment
+    def initialize(attributes = {})
       @attributes   = attributes
       @content_type = attributes[:content_type]
       @filename     = attributes[:filename]
@@ -121,22 +120,22 @@ module Sprockets
     end
     alias_method :bytesize, :length
 
-    # Public: Returns String hexdigest of source.
-    def hexdigest
-      DigestUtils.pack_hexdigest(metadata[:digest])
+    # Public: Returns String byte digest of source.
+    def digest
+      metadata[:digest]
     end
 
-    # Deprecated: Returns String hexdigest of source.
-    #
-    # In 4.x this will be changed to return a raw Digest byte String.
-    alias_method :digest, :hexdigest
+    # Public: Returns String hexdigest of source.
+    def hexdigest
+      DigestUtils.pack_hexdigest(digest)
+    end
 
     # Pubic: ETag String of Asset.
     alias_method :etag, :hexdigest
 
     # Public: Returns String base64 digest of source.
     def base64digest
-      DigestUtils.pack_base64digest(metadata[:digest])
+      DigestUtils.pack_base64digest(digest)
     end
 
     # Public: A "named information" URL for subresource integrity.
@@ -164,9 +163,6 @@ module Sprockets
       PathUtils.atomic_write(filename) do |f|
         f.write source
       end
-
-      # Set mtime correctly
-      File.utime(mtime, mtime, filename)
 
       nil
     end

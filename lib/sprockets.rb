@@ -71,6 +71,16 @@ module Sprockets
   register_mime_type 'text/plain', extensions: ['.txt', '.text']
   register_mime_type 'text/yaml', extensions: ['.yml', '.yaml'], charset: :unicode
 
+  # Ruby extensions
+  # register_mime_type 'application/css+ruby', extensions: ['.css.erb'], charset: :css
+  # register_mime_type 'application/html+ruby', extensions: ['.html.erb', '.erb', '.rhtml'], charset: :html
+  # register_mime_type 'application/javascript+ruby', extensions: ['.js.erb'], charset: :unicode
+  register_mime_type 'application/json+ruby', extensions: ['.json.erb'], charset: :unicode
+  # register_mime_type 'application/plain+ruby', extensions: ['.txt.erb', '.text.erb']
+  register_mime_type 'application/ruby', extensions: ['.rb']
+  register_mime_type 'application/xml+ruby', extensions: ['.xml.erb', '.rxml']
+  # register_mime_type 'application/yaml+ruby', extensions: ['.yml.erb', '.yaml.erb'], charset: :unicode
+
   # Common image types
   register_mime_type 'image/x-icon', extensions: ['.ico']
   register_mime_type 'image/bmp', extensions: ['.bmp']
@@ -98,12 +108,8 @@ module Sprockets
   register_mime_type 'application/font-woff', extensions: ['.woff']
 
   require 'sprockets/directive_processor'
-  register_preprocessor 'text/css', DirectiveProcessor.new(
-    comments: ["//", ["/*", "*/"]]
-  )
-  register_preprocessor 'application/javascript', DirectiveProcessor.new(
-    comments: ["//", ["/*", "*/"]] + ["#", ["###", "###"]]
-  )
+  register_preprocessor 'text/css', DirectiveProcessor.new(comments: ["//", ["/*", "*/"]])
+  register_preprocessor 'application/javascript', DirectiveProcessor.new(comments: ["//", ["/*", "*/"]])
 
   require 'sprockets/bundle'
   register_bundle_processor 'application/javascript', Bundle
@@ -113,6 +119,21 @@ module Sprockets
   register_bundle_metadata_reducer 'application/javascript', :data, Utils.method(:concat_javascript_sources)
   register_bundle_metadata_reducer '*/*', :links, :+
 
+  register_postprocessor 'application/javascript', proc { |input|
+    # Use an identity map if no mapping is defined
+    if !input[:metadata][:map]
+      map = SourceMap::Map.new([
+        SourceMap::Mapping.new(
+          input[:name],
+          SourceMap::Offset.new(0, 0),
+          SourceMap::Offset.new(0, 0)
+        )
+      ])
+      { data: input[:data], map: map }
+    end
+  }
+  register_bundle_metadata_reducer 'application/javascript', :map, :+
+
   register_compressor 'text/css', :sass, autoload_processor(:SassCompressor, 'sprockets/sass_compressor')
   register_compressor 'text/css', :scss, autoload_processor(:SassCompressor, 'sprockets/sass_compressor')
   register_compressor 'text/css', :yui, autoload_processor(:YUICompressor, 'sprockets/yui_compressor')
@@ -121,8 +142,16 @@ module Sprockets
   register_compressor 'application/javascript', :uglify, autoload_processor(:UglifierCompressor, 'sprockets/uglifier_compressor')
   register_compressor 'application/javascript', :yui, autoload_processor(:YUICompressor, 'sprockets/yui_compressor')
 
+  # 6to5, TheFuture™ is now
+  register_mime_type 'text/ecmascript-6', extensions: ['.es6'], charset: :unicode
+  register_transformer 'text/ecmascript-6', 'application/javascript', autoload_processor(:ES6to5Processor, 'sprockets/es6to5_processor')
+  register_preprocessor 'text/ecmascript-6', DirectiveProcessor.new(comments: ["//", ["/*", "*/"]])
+
   # Mmm, CoffeeScript
-  register_engine '.coffee', autoload_processor(:CoffeeScriptProcessor, 'sprockets/coffee_script_processor'), mime_type: 'application/javascript'
+  register_mime_type 'text/coffeescript', extensions: ['.coffee', '.js.coffee']
+  # register_mime_type 'application/coffeescript+ruby', extensions: ['.coffee.erb', '.js.coffee.erb']
+  register_transformer 'text/coffeescript', 'application/javascript', autoload_processor(:CoffeeScriptProcessor, 'sprockets/coffee_script_processor')
+  register_preprocessor 'text/coffeescript', DirectiveProcessor.new(comments: ["#", ["###", "###"]])
 
   # JST engines
   register_engine '.jst', autoload_processor(:JstProcessor, 'sprockets/jst_processor'), mime_type: 'application/javascript'
@@ -130,8 +159,14 @@ module Sprockets
   register_engine '.ejs', autoload_processor(:EjsProcessor, 'sprockets/ejs_processor'), mime_type: 'application/javascript'
 
   # CSS engines
-  register_engine '.sass', autoload_processor(:SassProcessor, 'sprockets/sass_processor'), mime_type: 'text/css'
-  register_engine '.scss', autoload_processor(:ScssProcessor, 'sprockets/sass_processor'), mime_type: 'text/css'
+  register_mime_type 'text/sass', extensions: ['.sass', '.css.sass']
+  register_mime_type 'text/scss', extensions: ['.scss', '.css.scss']
+  # register_mime_type 'text/sass+ruby', extensions: ['.sass.erb', '.css.sass.erb']
+  # register_mime_type 'text/scss+ruby', extensions: ['.scss.erb', '.css.scss.erb']
+  register_transformer 'text/sass', 'text/css', autoload_processor(:SassProcessor, 'sprockets/sass_processor')
+  register_transformer 'text/scss', 'text/css', autoload_processor(:ScssProcessor, 'sprockets/sass_processor')
+  register_preprocessor 'text/sass', DirectiveProcessor.new(comments: ["//", ["/*", "*/"]])
+  register_preprocessor 'text/scss', DirectiveProcessor.new(comments: ["//", ["/*", "*/"]])
 
   # Other
   register_engine '.erb', autoload_processor(:ERBProcessor, 'sprockets/erb_processor'), mime_type: 'text/plain'
@@ -152,5 +187,3 @@ module Sprockets
   depend_on 'environment-version'
   depend_on 'environment-paths'
 end
-
-require 'sprockets/legacy'

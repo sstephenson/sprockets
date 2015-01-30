@@ -77,7 +77,7 @@ class TestSprocketsSass < TestBaseSass
   def render(path)
     path = fixture_path(path)
     silence_warnings do
-      @env[path].to_s
+      @env.find_asset(path, accept: 'text/css').to_s
     end
   end
 
@@ -325,8 +325,9 @@ div {
 
   test "path function generates links" do
     asset = silence_warnings do
-      @env['sass/paths.scss']
+      @env.find_asset('sass/paths.css')
     end
+    assert asset
 
     assert_equal [
       "file://#{fixture_path('compass/foo.css')}?type=text/css&id=xxx",

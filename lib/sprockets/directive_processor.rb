@@ -50,10 +50,8 @@ module Sprockets
     /x
 
     def self.instance
-      @instance ||= new(
-        # Deprecated: Default to C and Ruby comment styles
-        comments: ["//", ["/*", "*/"]] + ["#", ["###", "###"]]
-      )
+      # Default to C omment styles
+      @instance ||= new(comments: ["//", ["/*", "*/"]])
     end
 
     def self.call(input)
@@ -338,7 +336,7 @@ module Sprockets
         @dependencies.merge(deps)
         paths.each do |subpath, stat|
           next if subpath == @filename || stat.directory?
-          uri, deps = @environment.resolve(subpath, options.merge(compat: false))
+          uri, deps = @environment.resolve(subpath, options)
           @dependencies.merge(deps)
           yield uri if uri
         end

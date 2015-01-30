@@ -1,3 +1,2 @@
-<%= resolve("foo.js", compat: true) %>,
-<%= resolve("foo.js", :content_type => "application/javascript", compat: true) %>,
-<%= resolve("foo.js", :content_type => :self, compat: true) %>
+<%= resolve("foo.js") %>,
+<%= resolve("foo", accept: "application/javascript") %>

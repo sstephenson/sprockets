@@ -40,7 +40,7 @@ module Sprockets
     # Public: Same as resolve() but raises a FileNotFound exception instead of
     # nil if no assets are found.
     def resolve!(path, options = {})
-      uri, deps = resolve(path, options.merge(compat: false))
+      uri, deps = resolve(path, options)
 
       unless uri
         message = "couldn't find file '#{path}'"
@@ -182,7 +182,7 @@ module Sprockets
 
       # Internal: Returns the name, mime type and `Array` of engine extensions.
       #
-      #     "foo.js.coffee.erb"
+      #     "foo.coffee.erb"
       #     # => ["foo", "application/javascript", [".coffee", ".erb"]]
       #
       def parse_path_extnames(path)

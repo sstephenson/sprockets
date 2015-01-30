@@ -1,19 +1,17 @@
-require 'sprockets/legacy_tilt_processor'
 require 'sprockets/utils'
 
 module Sprockets
   # `Engines` provides a global and `Environment` instance registry.
   #
   # An engine is a type of processor that is bound to a filename
-  # extension. `application.js.coffee` indicates that the
-  # `CoffeeScriptProcessor` engine will be ran on the file.
+  # extension. `application.coffee` indicates that the
+  # `CoffeeScriptProcesor` engine will be ran on the file.
   #
   # Extensions can be stacked and will be evaulated from right to
-  # left. `application.js.coffee.erb` will first run `ERBProcessor`
+  # left. `application.coffee.erb` will first run `ERBProcessor`
   # then `CoffeeScriptProcessor`.
   #
-  # All `Engine`s must follow the `Template` interface. It is
-  # recommended to subclass `Template`.
+  # All `Engine`s must follow the `Processor` interface.
   #
   # Its recommended that you register engine changes on your local
   # `Environment` instance.
@@ -51,27 +49,12 @@ module Sprockets
     #     environment.register_engine '.coffee', CoffeeScriptProcessor
     #
     def register_engine(ext, klass, options = {})
-      ext = Sprockets::Utils.normalize_extension(ext)
-
-      if klass.class == Sprockets::AutoloadProcessor || klass.respond_to?(:call)
-        processor = klass
-        self.config = hash_reassoc(config, :engines) do |engines|
-          engines.merge(ext => klass)
-        end
-        if options[:mime_type]
-          self.config = hash_reassoc(config, :engine_mime_types) do |mime_types|
-            mime_types.merge(ext.to_s => options[:mime_type])
-          end
-        end
-      else
-        processor = LegacyTiltProcessor.new(klass)
-        self.config = hash_reassoc(config, :engines) do |engines|
-          engines.merge(ext => processor)
-        end
-        if klass.respond_to?(:default_mime_type) && klass.default_mime_type
-          self.config = hash_reassoc(config, :engine_mime_types) do |mime_types|
-            mime_types.merge(ext.to_s => klass.default_mime_type)
-          end
+      self.config = hash_reassoc(config, :engines) do |engines|
+        engines.merge(ext => klass)
+      end
+      if options[:mime_type]
+        self.config = hash_reassoc(config, :engine_mime_types) do |mime_types|
+          mime_types.merge(ext.to_s => options[:mime_type])
         end
       end
 

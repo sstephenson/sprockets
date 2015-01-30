@@ -7,7 +7,8 @@ class TestUglifierCompressor < Sprockets::TestCase
     input = {
       content_type: 'application/javascript',
       data: "function foo() {\n  return true;\n}",
-      cache: Sprockets::Cache.new
+      cache: Sprockets::Cache.new,
+      metadata: {}
     }
     output = "function foo(){return!0}"
     assert_equal output, Sprockets::UglifierCompressor.call(input)

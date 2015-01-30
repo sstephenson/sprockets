@@ -33,7 +33,7 @@ Sprockets.register_dependency_resolver "rand" do
 end
 
 NoopProcessor = proc { |input| input[:data] }
-# Sprockets.register_mime_type 'text/haml', extensions: ['.haml']
+Sprockets.register_mime_type 'text/haml', extensions: ['.haml']
 Sprockets.register_engine '.haml', NoopProcessor, mime_type: 'text/html'
 
 # Sprockets.register_mime_type 'text/ng-template', extensions: ['.ngt']
@@ -46,16 +46,13 @@ $app.run(function($templateCache) {
 }
 Sprockets.register_engine '.ngt', AngularProcessor, mime_type: 'application/javascript'
 
-# Sprockets.register_mime_type 'text/mustache', extensions: ['.mustache']
+Sprockets.register_mime_type 'text/mustache', extensions: ['.mustache']
 Sprockets.register_engine '.mustache', NoopProcessor, mime_type: 'application/javascript'
 
-# Sprockets.register_mime_type 'text/x-handlebars-template', extensions: ['.handlebars']
+Sprockets.register_mime_type 'text/x-handlebars-template', extensions: ['.handlebars']
 Sprockets.register_engine '.handlebars', NoopProcessor, mime_type: 'application/javascript'
 
-# Sprockets.register_mime_type 'application/javascript-module', extensions: ['.es6']
-Sprockets.register_engine '.es6', NoopProcessor, mime_type: 'application/javascript'
-
-# Sprockets.register_mime_type 'application/dart', extensions: ['.dart']
+Sprockets.register_mime_type 'application/dart', extensions: ['.dart']
 Sprockets.register_engine '.dart', NoopProcessor, mime_type: 'application/javascript'
 
 require 'nokogiri'

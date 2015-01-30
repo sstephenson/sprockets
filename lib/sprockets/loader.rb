@@ -41,7 +41,7 @@ module Sprockets
           end
         end
       end
-      Asset.new(self, asset)
+      Asset.new(asset)
     end
 
     private
@@ -105,6 +105,7 @@ module Sprockets
             load_path: load_path,
             name: name,
             content_type: type,
+            map: SourceMap::Map.new,
             metadata: { dependencies: dependencies }
           })
           source = result.delete(:data)
@@ -136,16 +137,6 @@ module Sprockets
 
         asset[:id]  = pack_hexdigest(digest(asset))
         asset[:uri] = build_asset_uri(filename, params.merge(id: asset[:id]))
-
-        # Deprecated: Avoid tracking Asset mtime
-        asset[:mtime] = metadata[:dependencies].map { |u|
-          if u.start_with?("file-digest:")
-            s = self.stat(parse_file_digest_uri(u))
-            s ? s.mtime.to_i : 0
-          else
-            0
-          end
-        }.max
 
         cache.set(['asset-uri', VERSION, asset[:uri]], asset, true)
         cache.set(['asset-uri-digest', VERSION, uri, asset[:dependencies_digest]], asset[:uri], true)

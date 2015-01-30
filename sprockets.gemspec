@@ -12,7 +12,9 @@ Gem::Specification.new do |s|
   s.executables = ["sprockets"]
 
   s.add_dependency "rack", "~> 1.0"
+  s.add_dependency "sourcemap"
 
+  s.add_development_dependency "6to5", "~> 0.1"
   s.add_development_dependency "closure-compiler", "~> 1.1"
   s.add_development_dependency "coffee-script-source", "~> 1.6"
   s.add_development_dependency "coffee-script", "~> 2.2"

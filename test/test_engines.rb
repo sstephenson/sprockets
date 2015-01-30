@@ -1,34 +1,14 @@
 require 'sprockets_test'
 require 'sprockets/engines'
 
-class AlertProcessor
-  def self.default_mime_type
-    'application/javascript'
-  end
-
-  def initialize(file, &block)
-    @data = block.call
-  end
-
-  def render(context)
-    "alert(#{@data.inspect});"
-  end
-end
-
-class StringProcessor
-  def initialize(file, &block)
-    @data = block.call
-  end
-
-  def render(context)
-    @data.gsub(/#\{.*?\}/, "moo")
-  end
-end
-
 class TestEngines < Sprockets::TestCase
+  AlertProcessor = proc { |input|
+    "alert(#{input[:data].inspect});"
+  }
+
   test "registering engine" do
     env = new_environment
-    env.register_engine ".alert", AlertProcessor
+    env.register_engine ".alert", AlertProcessor, mime_type: 'application/javascript'
     asset = env["hello.alert"]
     assert_equal 'alert("Hello world!\n");', asset.to_s
     assert_equal 'application/javascript', asset.content_type

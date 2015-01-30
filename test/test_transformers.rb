@@ -35,7 +35,7 @@ class TestTransformers < Sprockets::TestCase
   test "expand transform accepts" do
     assert_equal [['text/plain', 1.0]],
       @env.expand_transform_accepts(@env.parse_q_values('text/plain'))
-    assert_equal [['application/javascript', 1.0]],
+    assert_equal [['application/javascript', 1.0], ["text/ecmascript-6", 0.8], ['text/coffeescript', 0.8]],
       @env.expand_transform_accepts(@env.parse_q_values('application/javascript'))
     assert_equal [['image/png', 1.0], ['image/svg+xml', 0.8]],
       @env.expand_transform_accepts(@env.parse_q_values('image/png'))

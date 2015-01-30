@@ -44,7 +44,7 @@ module Sprockets
     # Internal: Cache key version for this class. Rarely should have to change
     # unless the cache format radically changes. Will be bump on major version
     # releases though.
-    VERSION = '3.0'
+    VERSION = '4.0'
 
     def self.default_logger
       logger = Logger.new($stderr)

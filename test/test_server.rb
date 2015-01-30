@@ -221,15 +221,12 @@ class TestServer < Sprockets::TestCase
     assert_match %r{max-age}, last_response.headers['Cache-Control']
   end
 
-  test "using non-body fingerprint for body only request" do
+  test "not found with response with incorrect fingerprint body" do
     get "/assets/application.js"
     digest = last_response.headers['ETag'][/"(.+)"/, 1]
 
     get "/assets/application-#{digest}.js?body=1"
-    assert_equal 200, last_response.status
-    assert_equal "\n(function() {\n  application.boot();\n})();\n", last_response.body
-    assert_equal "43", last_response.headers['Content-Length']
-    assert_match %r{max-age}, last_response.headers['Cache-Control']
+    assert_equal 404, last_response.status    
   end
 
   test "bad fingerprint digest returns a 404" do

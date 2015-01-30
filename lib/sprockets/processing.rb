@@ -1,6 +1,5 @@
+require 'source_map'
 require 'sprockets/engines'
-require 'sprockets/legacy_proc_processor'
-require 'sprockets/legacy_tilt_processor'
 require 'sprockets/mime'
 require 'sprockets/processor_utils'
 require 'sprockets/uri_utils'
@@ -222,9 +221,8 @@ module Sprockets
       end
 
     private
-      def register_config_processor(type, mime_type, klass, proc = nil, &block)
-        proc ||= block
-        processor = wrap_processor(klass, proc)
+      def register_config_processor(type, mime_type, processor = nil, &block)
+        processor ||= block
 
         self.config = hash_reassoc(config, type, mime_type) do |processors|
           processors.unshift(processor)
@@ -232,30 +230,10 @@ module Sprockets
         end
       end
 
-      def unregister_config_processor(type, mime_type, klass)
-        if klass.is_a?(String) || klass.is_a?(Symbol)
-          klass = config[type][mime_type].detect do |cls|
-            cls.respond_to?(:name) && cls.name == "Sprockets::LegacyProcProcessor (#{klass})"
-          end
-        end
-
+      def unregister_config_processor(type, mime_type, proccessor)
         self.config = hash_reassoc(config, type, mime_type) do |processors|
-          processors.delete(klass)
+          processors.delete(proccessor)
           processors
-        end
-      end
-
-      def wrap_processor(klass, proc)
-        if !proc
-          if klass.class == Sprockets::AutoloadProcessor || klass.respond_to?(:call)
-            klass
-          else
-            LegacyTiltProcessor.new(klass)
-          end
-        elsif proc.respond_to?(:arity) && proc.arity == 2
-          LegacyProcProcessor.new(klass.to_s, proc)
-        else
-          proc
         end
       end
   end

@@ -46,13 +46,6 @@ module Sprockets
       options = {}
       options[:bundle] = !body_only?(env)
 
-      # 2.x/3.x compatibility hack. Just ignore fingerprints on ?body=1 requests.
-      # 3.x/4.x prefers strong validation of fingerprint to body contents, but
-      # 2.x just ignored it.
-      if options[:bundle] == false
-        fingerprint = nil
-      end
-
       if fingerprint
         if_match = fingerprint
       elsif env['HTTP_IF_MATCH']
