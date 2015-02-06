@@ -111,7 +111,7 @@ module Sprockets
 
       str
     end
-    CHARSET_DETECT[:default] = method(:detect)
+    DETECT = CHARSET_DETECT[:default] = method(:detect)
 
     # Internal: Use Charlock Holmes to detect encoding.
     #
@@ -145,7 +145,7 @@ module Sprockets
 
       str
     end
-    CHARSET_DETECT[:unicode] = method(:detect_unicode)
+    DETECT_UNICODE = CHARSET_DETECT[:unicode] = method(:detect_unicode)
 
     # Public: Detect and strip BOM from possible unicode string.
     #
@@ -193,7 +193,7 @@ module Sprockets
 
       str
     end
-    CHARSET_DETECT[:css] = method(:detect_css)
+    DETECT_CSS = CHARSET_DETECT[:css] = method(:detect_css)
 
     # Internal: @charset bytes
     CHARSET_START = [0x40, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x20, 0x22]
@@ -253,6 +253,6 @@ module Sprockets
 
       str
     end
-    CHARSET_DETECT[:html] = method(:detect_html)
+    DETECT_HTML = CHARSET_DETECT[:html] = method(:detect_html)
   end
 end
