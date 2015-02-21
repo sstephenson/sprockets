@@ -86,4 +86,19 @@ class TestRakeTask < Sprockets::TestCase
     assert Dir["#{@dir}/manifest-*.json"].first
     assert File.exist?("#{@dir}/#{digest_path}")
   end
+
+  test "paths" do
+    begin
+      fake_stdout = StringIO.new
+      $stdout = fake_stdout
+
+      @rake[:paths].invoke
+
+      fake_stdout.close
+
+      assert_equal fake_stdout.string, "#{fixture_path('default')}\n"
+    ensure
+      $stdout = STDOUT
+    end
+  end
 end
