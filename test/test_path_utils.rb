@@ -26,7 +26,6 @@ class TestPathUtils < MiniTest::Test
       "default",
       "directives",
       "encoding",
-      "engines",
       "errors",
       "octicons",
       "paths",
@@ -224,7 +223,7 @@ class TestPathUtils < MiniTest::Test
       File.expand_path("../fixtures/asset/tree/all/b.css", __FILE__),
       File.expand_path("../fixtures/asset/tree/all/b.js.erb", __FILE__),
       File.expand_path("../fixtures/asset/tree/all/d", __FILE__),
-      File.expand_path("../fixtures/asset/tree/all/d/c.js.coffee", __FILE__),
+      File.expand_path("../fixtures/asset/tree/all/d/c.coffee", __FILE__),
       File.expand_path("../fixtures/asset/tree/all/d/e.js", __FILE__)
     ], files.map(&:first)
 
@@ -249,8 +248,8 @@ class TestPathUtils < MiniTest::Test
       File.expand_path("../fixtures/asset/tree/all/b/c/d.js", __FILE__),
       File.expand_path("../fixtures/asset/tree/all/b/c/e.js", __FILE__),
       File.expand_path("../fixtures/asset/tree/all/d", __FILE__),
-      File.expand_path("../fixtures/asset/tree/all/d/c.js.coffee", __FILE__),
-      File.expand_path("../fixtures/asset/tree/all/d/e.js", __FILE__),
+      File.expand_path("../fixtures/asset/tree/all/d/c.coffee", __FILE__),
+      File.expand_path("../fixtures/asset/tree/all/d/e.js", __FILE__)
     ], files.map(&:first)
 
     assert_equal [], stat_tree(File.expand_path("../fixtures/missing", __FILE__)).to_a

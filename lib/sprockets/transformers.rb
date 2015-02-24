@@ -39,6 +39,26 @@ module Sprockets
       compute_transformers!
     end
 
+    # Internal: Register transformer for existing type adding a suffix.
+    #
+    # types       - Array of existing mime type Strings
+    # type_format - String suffix formatting string
+    # extname     - String extension to append
+    # processor   - Callable block that accepts an input Hash.
+    #
+    # Returns nothing.
+    def register_transformer_suffix(types, type_format, extname, processor)
+      Array(types).each do |type|
+        extensions, charset = mime_types[type].values_at(:extensions, :charset)
+        parts = type.split('/')
+        suffix_type = type_format.sub('\1', parts[0]).sub('\2', parts[1])
+        extensions = extensions.map { |ext| "#{ext}#{extname}" }
+
+        register_mime_type(suffix_type, extensions: extensions, charset: charset)
+        register_transformer(suffix_type, type, processor)
+      end
+    end
+
     # Internal: Resolve target mime type that the source type should be
     # transformed to.
     #

@@ -1,1 +1,1 @@
-// =require "users.js.erb"
+// =require "users.js"

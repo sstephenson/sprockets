@@ -1,6 +1,4 @@
-require 'sprockets/engines'
-require 'sprockets/legacy_proc_processor'
-require 'sprockets/legacy_tilt_processor'
+require 'source_map'
 require 'sprockets/mime'
 require 'sprockets/processor_utils'
 require 'sprockets/uri_utils'
@@ -172,23 +170,20 @@ module Sprockets
     protected
       def resolve_processors_cache_key_uri(uri)
         params = parse_uri_query_params(uri[11..-1])
-        params[:engine_extnames] = params[:engines] ? params[:engines].split(',') : []
-        processors = processors_for(params[:type], params[:file_type], params[:engine_extnames], params[:skip_bundle])
+        processors = processors_for(params[:type], params[:file_type], params[:skip_bundle])
         processors_cache_keys(processors)
       end
 
-      def build_processors_uri(type, file_type, engine_extnames, skip_bundle)
-        engines = engine_extnames.join(',') if engine_extnames.any?
+      def build_processors_uri(type, file_type, skip_bundle)
         query = encode_uri_query_params(
           type: type,
           file_type: file_type,
-          engines: engines,
           skip_bundle: skip_bundle
         )
         "processors:#{query}"
       end
 
-      def processors_for(type, file_type, engine_extnames, skip_bundle)
+      def processors_for(type, file_type, skip_bundle)
         processors = []
 
         bundled_processors = skip_bundle ? [] : config[:bundle_processors][type]
@@ -197,12 +192,9 @@ module Sprockets
           processors.concat bundled_processors
         else
           processors.concat config[:postprocessors][type]
-
           if type != file_type && processor = config[:transformers][file_type][type]
             processors << processor
           end
-
-          processors.concat engine_extnames.map { |ext| config[:engines][ext] }
           processors.concat config[:preprocessors][file_type]
         end
 
@@ -214,9 +206,8 @@ module Sprockets
       end
 
     private
-      def register_config_processor(type, mime_type, klass, proc = nil, &block)
-        proc ||= block
-        processor = wrap_processor(klass, proc)
+      def register_config_processor(type, mime_type, processor = nil, &block)
+        processor ||= block
 
         self.config = hash_reassoc(config, type, mime_type) do |processors|
           processors.unshift(processor)
@@ -226,33 +217,13 @@ module Sprockets
         compute_transformers!
       end
 
-      def unregister_config_processor(type, mime_type, klass)
-        if klass.is_a?(String) || klass.is_a?(Symbol)
-          klass = config[type][mime_type].detect do |cls|
-            cls.respond_to?(:name) && cls.name == "Sprockets::LegacyProcProcessor (#{klass})"
-          end
-        end
-
+      def unregister_config_processor(type, mime_type, proccessor)
         self.config = hash_reassoc(config, type, mime_type) do |processors|
-          processors.delete(klass)
+          processors.delete(proccessor)
           processors
         end
 
         compute_transformers!
-      end
-
-      def wrap_processor(klass, proc)
-        if !proc
-          if klass.respond_to?(:call)
-            klass
-          else
-            LegacyTiltProcessor.new(klass)
-          end
-        elsif proc.respond_to?(:arity) && proc.arity == 2
-          LegacyProcProcessor.new(klass.to_s, proc)
-        else
-          proc
-        end
       end
   end
 end

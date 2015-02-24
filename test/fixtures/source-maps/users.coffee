@@ -1,0 +1,2 @@
+Users =
+  find: (id) ->

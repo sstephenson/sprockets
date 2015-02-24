@@ -17,7 +17,7 @@ module Sprockets
       type = input[:content_type]
       dependencies = Set.new(input[:metadata][:dependencies])
 
-      processed_uri, deps = env.resolve(input[:filename], accept: type, bundle: false, compat: false)
+      processed_uri, deps = env.resolve(input[:filename], accept: type, bundle: false)
       dependencies.merge(deps)
 
       find_required = proc { |uri| env.load(uri).metadata[:required] }

@@ -36,24 +36,15 @@ module Sprockets
 
     # Public: Register a new mime type.
     #
-    # mime_type - String MIME Type
-    # options - Hash
-    #   extensions: Array of String extnames
-    #   charset: Proc/Method that detects the charset of a file.
-    #            See EncodingUtils.
+    # mime_type  - String MIME Type
+    # extensions - Array of String extnames
+    # charset    - Proc/Method that detects the charset of a file.
+    #              See EncodingUtils.
     #
     # Returns nothing.
-    def register_mime_type(mime_type, options = {})
-      # Legacy extension argument, will be removed from 4.x
-      if options.is_a?(String)
-        options = { extensions: [options] }
-      end
+    def register_mime_type(mime_type, extensions: [], charset: nil)
+      extnames = Array(extensions)
 
-      extnames = Array(options[:extensions]).map { |extname|
-        Sprockets::Utils.normalize_extension(extname)
-      }
-
-      charset = options[:charset]
       charset ||= :default if mime_type.start_with?('text/')
       charset = EncodingUtils::CHARSET_DETECT[charset] if charset.is_a?(Symbol)
 
@@ -68,10 +59,6 @@ module Sprockets
         type = { extensions: extnames }
         type[:charset] = charset if charset
         mime_types.merge(mime_type => type)
-      end
-
-      self.config = hash_reassoc(config, :_extnames) do
-        compute_extname_map
       end
     end
 
@@ -104,22 +91,5 @@ module Sprockets
         data
       end
     end
-
-    private
-      def compute_extname_map
-        graph = {}
-
-        ([[nil, nil]] + config[:mime_exts].to_a).each do |format_extname, format_type|
-          3.times do |n|
-            config[:engines].keys.permutation(n).each do |engine_extnames|
-              key = "#{format_extname}#{engine_extnames.join}"
-              type = format_type || config[:engine_mime_types][engine_extnames.first]
-              graph[key] = {type: type, engines: engine_extnames}
-            end
-          end
-        end
-
-        graph
-      end
   end
 end

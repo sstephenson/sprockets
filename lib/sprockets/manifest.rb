@@ -116,14 +116,10 @@ module Sprockets
 
       return to_enum(__method__, *args) unless block_given?
 
-      filters = args.flatten.map { |arg| self.class.compile_match_filter(arg) }
-
       environment = self.environment.cached
-      environment.logical_paths do |logical_path, filename|
-        if filters.any? { |f| f.call(logical_path, filename) }
-          environment.find_all_linked_assets(filename) do |asset|
-            yield asset
-          end
+      args.flatten.each do |path|
+        environment.find_all_linked_assets(path) do |asset|
+          yield asset
         end
       end
 
@@ -147,7 +143,7 @@ module Sprockets
       find(*args) do |asset|
         files[asset.digest_path] = {
           'logical_path' => asset.logical_path,
-          'mtime'        => asset.mtime.iso8601,
+          'mtime'        => Time.now.iso8601,
           'size'         => asset.bytesize,
           'digest'       => asset.hexdigest,
           'integrity'    => asset.integrity

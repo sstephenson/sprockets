@@ -63,7 +63,7 @@ class TestSprockets < Sprockets::TestCase
 
   test "compile multiple assets to output directory" do
     digest_path1, digest_path2 = @env['gallery.js'].digest_path, @env['gallery.css'].digest_path
-    output = sprockets "-I", fixture_path("default"), "-o", @dir, fixture_path("default/gallery.js"), fixture_path("default/gallery.css.erb")
+    output = sprockets "-I", fixture_path("default"), "-o", @dir, "gallery.js", "gallery.css"
     assert_equal "", output
     assert Dir["#{@dir}/manifest-*.json"].first
     assert File.exist?("#{@dir}/#{digest_path1}")
@@ -71,12 +71,12 @@ class TestSprockets < Sprockets::TestCase
   end
 
   test "minify js with uglify" do
-    output = sprockets "-I", fixture_path("default"), "--js-compressor", "uglify", fixture_path("default/gallery.js")
+    output = sprockets "-I", fixture_path("default"), "--js-compressor", "uglify", "gallery.js"
     assert_equal "var Gallery={};\n", output
   end
 
   test "compress css with sass" do
-    output = sprockets "-I", fixture_path("default"), "--css-compressor", "sass", fixture_path("default/gallery.css.erb")
+    output = sprockets "-I", fixture_path("default"), "--css-compressor", "sass", "gallery.css"
     assert_equal ".gallery{color:red}\n", output
   end
 

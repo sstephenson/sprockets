@@ -40,13 +40,6 @@ class TestServer < Sprockets::TestCase
     assert_equal "var foo;\n", last_response.body
   end
 
-  test "serve single source file body" do
-    get "/assets/foo.js?body=1"
-    assert_equal 200, last_response.status
-    assert_equal "9", last_response.headers['Content-Length']
-    assert_equal "var foo;\n", last_response.body
-  end
-
   test "serve single source file from cached environment" do
     get "/cached/javascripts/foo.js"
     assert_equal "var foo;\n", last_response.body
@@ -56,14 +49,6 @@ class TestServer < Sprockets::TestCase
     get "/assets/application.js"
     assert_equal "var foo;\n\n(function() {\n  application.boot();\n})();\n",
       last_response.body
-  end
-
-  test "serve source file body that has dependencies" do
-    get "/assets/application.js?body=true"
-    assert_equal 200, last_response.status
-    assert_equal "\n(function() {\n  application.boot();\n})();\n",
-      last_response.body
-    assert_equal "43", last_response.headers['Content-Length']
   end
 
   test "serve source with content type headers" do
@@ -207,28 +192,6 @@ class TestServer < Sprockets::TestCase
 
     get "/assets/application-#{digest}.js"
     assert_equal 200, last_response.status
-    assert_match %r{max-age}, last_response.headers['Cache-Control']
-  end
-
-  test "fingerprint digest of file body" do
-    get "/assets/application.js?body=1"
-    digest = last_response.headers['ETag'][/"(.+)"/, 1]
-
-    get "/assets/application-#{digest}.js?body=1"
-    assert_equal 200, last_response.status
-    assert_equal "\n(function() {\n  application.boot();\n})();\n", last_response.body
-    assert_equal "43", last_response.headers['Content-Length']
-    assert_match %r{max-age}, last_response.headers['Cache-Control']
-  end
-
-  test "using non-body fingerprint for body only request" do
-    get "/assets/application.js"
-    digest = last_response.headers['ETag'][/"(.+)"/, 1]
-
-    get "/assets/application-#{digest}.js?body=1"
-    assert_equal 200, last_response.status
-    assert_equal "\n(function() {\n  application.boot();\n})();\n", last_response.body
-    assert_equal "43", last_response.headers['Content-Length']
     assert_match %r{max-age}, last_response.headers['Cache-Control']
   end
 

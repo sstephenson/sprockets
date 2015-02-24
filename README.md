@@ -143,9 +143,9 @@ get its length in bytes, `mtime` to query its last-modified time, and
 
 ## Using Processors
 
-Asset source files can be written in another format, like SCSS or
-CoffeeScript, and automatically compiled to CSS or JavaScript by
-Sprockets. Processors that convert a file from one format to another are called *transformers*.
+Asset source files can be written in another format, like SCSS or CoffeeScript,
+and automatically compiled to CSS or JavaScript by Sprockets. Processors that
+convert a file from one format to another are called *transformers*.
 
 ### Minifying Assets
 

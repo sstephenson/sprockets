@@ -79,6 +79,9 @@ module Sprockets
         elsif klass == Encoding
           digest << 'Encoding'
           digest << obj.name
+        elsif klass == SourceMap::Map
+          digest << 'SourceMap::Map'
+          queue << obj.as_json
         else
           raise TypeError, "couldn't digest #{klass}"
         end

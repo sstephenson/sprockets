@@ -12,7 +12,7 @@ module Sprockets
   #       Sprockets::UglifierCompressor.new(comments: :copyright)
   #
   class UglifierCompressor
-    VERSION = '1'
+    VERSION = '2'
 
     # Public: Return singleton instance with default options.
     #
@@ -53,9 +53,13 @@ module Sprockets
 
     def call(input)
       data = input[:data]
-      input[:cache].fetch(@cache_key + [data]) do
-        @uglifier.compile(data)
+
+      js, map = input[:cache].fetch(@cache_key + [data]) do
+        @uglifier.compile_with_map(data)
       end
+
+      map = input[:metadata][:map] | SourceMap::Map.from_json(map)
+      { data: js, map: map }
     end
   end
 end

@@ -22,30 +22,17 @@ Sprockets.register_dependency_resolver "rand" do
 end
 
 NoopProcessor = proc { |input| input[:data] }
-# Sprockets.register_mime_type 'text/haml', extensions: ['.haml']
-Sprockets.register_engine '.haml', NoopProcessor, mime_type: 'text/html'
+Sprockets.register_mime_type 'text/haml', extensions: ['.haml']
+Sprockets.register_transformer 'text/haml', 'text/html', NoopProcessor
 
-# Sprockets.register_mime_type 'text/ng-template', extensions: ['.ngt']
-AngularProcessor = proc { |input|
-  <<-EOS
-$app.run(function($templateCache) {
-  $templateCache.put('#{input[:name]}.html', #{input[:data].chomp.inspect});
-});
-  EOS
-}
-Sprockets.register_engine '.ngt', AngularProcessor, mime_type: 'application/javascript'
+Sprockets.register_mime_type 'text/mustache', extensions: ['.mustache']
+Sprockets.register_transformer 'text/mustache', 'application/javascript+function', NoopProcessor
 
-# Sprockets.register_mime_type 'text/mustache', extensions: ['.mustache']
-Sprockets.register_engine '.mustache', NoopProcessor, mime_type: 'application/javascript'
+Sprockets.register_mime_type 'text/x-handlebars-template', extensions: ['.handlebars']
+Sprockets.register_transformer 'text/x-handlebars-template', 'application/javascript+function', NoopProcessor
 
-# Sprockets.register_mime_type 'text/x-handlebars-template', extensions: ['.handlebars']
-Sprockets.register_engine '.handlebars', NoopProcessor, mime_type: 'application/javascript'
-
-# Sprockets.register_mime_type 'application/javascript-module', extensions: ['.es6']
-Sprockets.register_engine '.es6', NoopProcessor, mime_type: 'application/javascript'
-
-# Sprockets.register_mime_type 'application/dart', extensions: ['.dart']
-Sprockets.register_engine '.dart', NoopProcessor, mime_type: 'application/javascript'
+Sprockets.register_mime_type 'application/dart', extensions: ['.dart']
+Sprockets.register_transformer 'application/dart', 'application/javascript', NoopProcessor
 
 require 'nokogiri'
 
@@ -70,9 +57,6 @@ XmlBuilderProcessor = proc { |input|
 }
 Sprockets.register_mime_type 'application/xml+builder', extensions: ['.xml.builder']
 Sprockets.register_transformer 'application/xml+builder', 'application/xml', XmlBuilderProcessor
-
-require 'sprockets/jst_processor'
-Sprockets.register_engine '.jst2', Sprockets::JstProcessor.new(namespace: 'this.JST2'), mime_type: 'application/javascript'
 
 SVG2PNG = proc { |input|
   "\x89\x50\x4e\x47\xd\xa\x1a\xa#{input[:data]}"
@@ -100,33 +84,9 @@ Sprockets.register_postprocessor 'text/css', proc { |input|
   { selector_count: input[:data].scan(/\{/).size }
 }
 
-SourceMapTransformer = proc { |input|
-  accept = case input[:content_type]
-  when "application/js-sourcemap+json"
-    accept = "application/javascript"
-  when "application/css-sourcemap+json"
-    accept = "text/css"
-  else
-    fail input[:content_type]
-  end
-
-  uri, _ = input[:environment].resolve!(input[:filename], accept: accept)
-  asset = input[:environment].load(uri)
-
-  JSON.generate({
-    "version" => 3,
-    "file" => asset.logical_path,
-    "mappings" => ";#{asset.bytesize}"
-  })
-}
-Sprockets.register_mime_type 'application/js-sourcemap+json', extensions: ['.js.map']
-Sprockets.register_mime_type 'application/css-sourcemap+json', extensions: ['.css.map']
-Sprockets.register_transformer 'application/javascript', 'application/js-sourcemap+json', SourceMapTransformer
-Sprockets.register_transformer 'text/css', 'application/css-sourcemap+json', SourceMapTransformer
-
 
 class Sprockets::TestCase < MiniTest::Test
-  FIXTURE_ROOT = File.expand_path(File.join(File.dirname(__FILE__), "fixtures"))
+  FIXTURE_ROOT = File.join(__dir__, "fixtures")
 
   def self.test(name, &block)
     define_method("test_#{name.inspect}", &block)

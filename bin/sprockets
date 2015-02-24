@@ -11,7 +11,7 @@ unless ARGV.delete("--noenv")
   end
 end
 
-filenames = []
+paths = []
 environment = Sprockets::Environment.new(Dir.pwd)
 manifest = nil
 
@@ -63,8 +63,8 @@ OptionParser.new do |opts|
   opts.show_usage if ARGV.empty?
 
   begin
-    opts.order(ARGV) do |filename|
-      filenames << File.expand_path(filename)
+    opts.order(ARGV) do |path|
+      paths << path
     end
   rescue OptionParser::ParseError => e
     opts.warn e.message
@@ -74,14 +74,14 @@ end
 
 if environment.paths.empty?
   warn "No load paths given"
-  warn "Usage: sprockets -Ijavascripts/ filename"
+  warn "Usage: sprockets -Ijavascripts/ path"
   exit 1
 end
 
 if manifest
-  manifest.compile(filenames)
-elsif filenames.length == 1
-  puts environment.find_asset(filenames.first).to_s
+  manifest.compile(paths)
+elsif paths.length == 1
+  puts environment.find_asset(paths.first).to_s
 else
   warn "Only one file can be compiled to stdout at a time"
   exit 1

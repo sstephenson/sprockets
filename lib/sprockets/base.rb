@@ -57,17 +57,17 @@ module Sprockets
     end
 
     # Find asset by logical path or expanded path.
-    def find_asset(path, options = {})
-      uri, _ = resolve(path, options.merge(compat: false))
+    def find_asset(*args)
+      uri, _ = resolve(*args)
       if uri
         load(uri)
       end
     end
 
-    def find_all_linked_assets(path, options = {})
-      return to_enum(__method__, path, options) unless block_given?
+    def find_all_linked_assets(*args)
+      return to_enum(__method__, *args) unless block_given?
 
-      asset = find_asset(path, options)
+      asset = find_asset(*args)
       return unless asset
 
       yield asset

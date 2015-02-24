@@ -1,21 +1,21 @@
 module Sprockets
-  # Public: .jst engine.
+  # Public: JST transformer.
   #
   # Exports server side compiled templates to an object.
   #
-  # Name your template "users/show.jst.ejs", "users/new.jst.eco", etc.
+  # Name your template "users/show.ejs", "users/new.eco", etc.
   #
   # To accept the default options
   #
-  #     environment.register_engine '.jst',
-  #       JstProcessor,
-  #       mime_type: 'application/javascript'
+  #     environment.register_transformer
+  #       'application/javascript+function',
+  #       'application/javascript', JstProcessor
   #
   # Change the default namespace.
   #
-  #     environment.register_engine '.jst',
-  #       JstProcessor.new(namespace: 'App.templates'),
-  #       mime_type: 'application/javascript'
+  #     environment.register_transformer
+  #       'application/javascript+function',
+  #       'application/javascript', JstProcessor.new(namespace: 'App.templates')
   #
   class JstProcessor
     def self.default_namespace
@@ -33,8 +33,8 @@ module Sprockets
       instance.call(input)
     end
 
-    def initialize(options = {})
-      @namespace = options[:namespace] || self.class.default_namespace
+    def initialize(namespace: self.class.default_namespace)
+      @namespace = namespace
     end
 
     def call(input)

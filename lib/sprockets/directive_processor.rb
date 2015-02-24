@@ -50,18 +50,16 @@ module Sprockets
     /x
 
     def self.instance
-      @instance ||= new(
-        # Deprecated: Default to C and Ruby comment styles
-        comments: ["//", ["/*", "*/"]] + ["#", ["###", "###"]]
-      )
+      # Default to C omment styles
+      @instance ||= new(comments: ["//", ["/*", "*/"]])
     end
 
     def self.call(input)
       instance.call(input)
     end
 
-    def initialize(options = {})
-      @header_pattern = compile_header_pattern(Array(options[:comments]))
+    def initialize(comments: [])
+      @header_pattern = compile_header_pattern(Array(comments))
     end
 
     def call(input)
@@ -358,11 +356,11 @@ module Sprockets
         end
       end
 
-      def resolve_paths(paths, deps, options = {})
+      def resolve_paths(paths, deps, **kargs)
         @dependencies.merge(deps)
         paths.each do |subpath, stat|
           next if subpath == @filename || stat.directory?
-          uri, deps = @environment.resolve(subpath, options.merge(compat: false))
+          uri, deps = @environment.resolve(subpath, **kargs)
           @dependencies.merge(deps)
           yield uri if uri
         end
@@ -390,13 +388,14 @@ module Sprockets
         asset
       end
 
-      def resolve(path, options = {})
+      def resolve(path, **kargs)
         # Prevent absolute paths in directives
         if @environment.absolute_path?(path)
           raise FileOutsidePaths, "can't require absolute file: #{path}"
         end
 
-        uri, deps = @environment.resolve!(path, options.merge(base_path: @dirname))
+        kargs[:base_path] = @dirname
+        uri, deps = @environment.resolve!(path, **kargs)
         @dependencies.merge(deps)
         uri
       end

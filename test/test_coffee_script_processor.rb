@@ -6,9 +6,16 @@ class TestCoffeeScriptProcessor < Sprockets::TestCase
     input = {
       content_type: 'application/javascript',
       data: "square = (n) -> n * n",
-      cache: Sprockets::Cache.new
+      name: 'squared',
+      cache: Sprockets::Cache.new,
+      metadata: {
+        map: SourceMap::Map.new
+      }
     }
-    assert Sprockets::CoffeeScriptProcessor.call(input).match(/var square/)
+    result = Sprockets::CoffeeScriptProcessor.call(input)
+    assert result[:data].match(/var square/)
+    assert_equal 19, result[:map].size
+    assert_equal [], result[:map].sources
   end
 
   test "cache key" do

@@ -102,34 +102,6 @@ module Sprockets
       end
     end
 
-    # Internal: Prepends a leading "." to an extension if its missing.
-    #
-    #     normalize_extension("js")
-    #     # => ".js"
-    #
-    #     normalize_extension(".css")
-    #     # => ".css"
-    #
-    def normalize_extension(extension)
-      extension = extension.to_s
-      if extension[/^\./]
-        extension
-      else
-        ".#{extension}"
-      end
-    end
-
-    # Internal: Feature detect if UnboundMethods can #bind to any Object or
-    # just Objects that share the same super class.
-    # Basically if RUBY_VERSION >= 2.
-    UNBOUND_METHODS_BIND_TO_ANY_OBJECT = begin
-      foo = Module.new { def bar; end }
-      foo.instance_method(:bar).bind(Object.new)
-      true
-    rescue TypeError
-      false
-    end
-
     # Internal: Inject into target module for the duration of the block.
     #
     # mod - Module
@@ -140,10 +112,6 @@ module Sprockets
 
       mod.instance_methods.each do |sym|
         old_methods[sym] = base.instance_method(sym) if base.method_defined?(sym)
-      end
-
-      unless UNBOUND_METHODS_BIND_TO_ANY_OBJECT
-        base.send(:include, mod) unless base < mod
       end
 
       mod.instance_methods.each do |sym|

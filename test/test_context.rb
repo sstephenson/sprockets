@@ -49,9 +49,9 @@ class TestContext < Sprockets::TestCase
   end
 
   test "resolve with content type" do
-    assert_equal [fixture_path("context/foo.js"),
-      fixture_path("context/foo.js"),
-      fixture_path("context/foo.js")
+    assert_equal [
+      "file://#{fixture_path("context/foo.js")}?type=application/javascript",
+      "file://#{fixture_path("context/foo.js")}?type=application/javascript"
     ].join(",\n"), @env["resolve_content_type.js"].to_s.strip
   end
 end
@@ -63,45 +63,38 @@ class TestCustomProcessor < Sprockets::TestCase
   end
 
   require 'yaml'
-  class YamlProcessor
-    def initialize(file, &block)
-      @data = block.call
+  YamlBundleProcessor = proc do |input|
+    env = input[:environment]
+    manifest = YAML.load(input[:data])
+    paths = manifest['require'].map do |logical_path|
+      uri, _ = env.resolve(logical_path)
+      uri
     end
-
-    def render(context)
-      manifest = YAML.load(@data)
-      manifest['require'].each do |logical_path|
-        context.require_asset(logical_path)
-      end
-      ""
-    end
+    { data: "", required: paths }
   end
 
   test "custom processor using Context#require" do
-    @env.register_engine '.yml', YamlProcessor
+    @env.register_mime_type 'text/yaml+bundle', extensions: ['.bundle.yml']
+    @env.register_transformer 'text/yaml+bundle', 'application/javascript', YamlBundleProcessor
 
     assert_equal "var Foo = {};\n\nvar Bar = {};\n", @env['application.js'].to_s
   end
 
   require 'base64'
-  class DataUriProcessor
-    def initialize(file, &block)
-      @data = block.call
-    end
-
-    def render(context)
-      data = @data
-      data.gsub(/url\(\"(.+?)\"\)/) do
-        path = context.resolve($1, compat: true)
-        context.depend_on(path)
-        data = Base64.encode64(File.open(path, "rb") { |f| f.read })
-        "url(data:image/png;base64,#{data})"
-      end
+  DataUriProcessor = proc do |input|
+    env = input[:environment]
+    data = input[:data]
+    data.gsub(/url\(\"(.+?)\"\)/) do
+      uri, _ = env.resolve($1)
+      path, _ = env.parse_asset_uri(uri)
+      data = Base64.encode64(File.open(path, "rb") { |f| f.read })
+      "url(data:image/png;base64,#{data})"
     end
   end
 
   test "custom processor using Context#resolve and Context#depend_on" do
-    @env.register_engine '.embed', DataUriProcessor
+    @env.register_mime_type 'text/css+embed', extensions: ['.css.embed']
+    @env.register_transformer 'text/css+embed', 'text/css', DataUriProcessor
 
     assert_equal ".pow {\n  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAEsCAMAAADNS4U5AAAAGXRFWHRTb2Z0\n",
       @env["sprite.css"].to_s.lines.to_a[0..1].join
@@ -111,10 +104,11 @@ class TestCustomProcessor < Sprockets::TestCase
   test "block custom processor" do
     require 'base64'
 
-    @env.register_preprocessor 'text/css', :data_uris do |context, data|
-      data.gsub(/url\(\"(.+?)\"\)/) do
-        path = context.resolve($1, compat: true)
-        context.depend_on(path)
+    @env.register_preprocessor 'text/css' do |input|
+      env = input[:environment]
+      input[:data].gsub(/url\(\"(.+?)\"\)/) do
+        uri, _ = env.resolve($1)
+        path, _ = env.parse_asset_uri(uri)
         data = Base64.encode64(File.open(path, "rb") { |f| f.read })
         "url(data:image/png;base64,#{data})"
       end
