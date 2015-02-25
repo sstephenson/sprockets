@@ -134,6 +134,15 @@ module Rake
       end
 
       task :clean => ["clean_#{name}"]
+
+      desc name == :assets ? "Print asset paths" : "Print #{name} asset paths"
+      task "#{name}_paths" do
+        with_logger do
+          environment.paths.each { |path| puts path }
+        end
+      end
+
+      task :paths => ["#{name}_paths"]
     end
 
     private
