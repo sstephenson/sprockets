@@ -339,7 +339,7 @@ asset's cache in response to a change in another file.
 ### The `depend_on_asset` Directive ###
 
 `depend_on_asset` *path* works like `depend_on`, but operates
-recursively reading the the file and following the directives found.
+recursively reading the file and following the directives found.
 
 ### The `stub` Directive ###
 
