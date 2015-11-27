@@ -75,9 +75,20 @@ module Sprockets
       @pathname = Pathname.new(file)
 
       @header = data[HEADER_PATTERN, 0] || ""
-      @body   = ($'.nil?) ? data : $'.sub("\n", "")
+      @body   = $' || data
       # Ensure body ends in a new line
       @body  += "\n" if @body != "" && @body !~ /\n\Z/m
+
+      # Deal with regex missing the last newline char when
+      # the header uses \* *\, e.g.
+      #
+      # /* global Foo */
+      # /* global Bar */
+      #
+      unless @header.end_with?($/)
+        @body.sub!($/, "")
+        @header += $/
+      end
 
       @included_pathnames = []
       @compat             = false
