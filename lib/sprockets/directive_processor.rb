@@ -75,7 +75,7 @@ module Sprockets
       @pathname = Pathname.new(file)
 
       @header = data[HEADER_PATTERN, 0] || ""
-      @body   = $' || data
+      @body   = ($'.nil?) ? data : $'.sub("\n", "")
       # Ensure body ends in a new line
       @body  += "\n" if @body != "" && @body !~ /\n\Z/m
 
