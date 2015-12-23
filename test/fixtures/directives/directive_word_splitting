@@ -1,6 +1,0 @@
-// =require
-// =require "two"
-// =require two three
-// =require "two three"
-// ="require" five
-// =require 'seven'

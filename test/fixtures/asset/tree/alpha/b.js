@@ -1,2 +1,0 @@
-//= require ./c
-var b;
