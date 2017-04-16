@@ -35,13 +35,14 @@ module Sprockets
 
     def evaluate(context, locals, &block)
       # Use custom importer that knows about Sprockets Caching
-      cache_store = SassCacheStore.new(context.environment)
+      # cache_store = SassCacheStore.new(context.environment)
 
       options = {
         :filename => eval_file,
         :line => line,
         :syntax => syntax,
-        :cache_store => cache_store,
+        :cache => false,
+        :read_cache => false,
         :importer => SassImporter.new(context.pathname.to_s),
         :load_paths => context.environment.paths.map { |path| SassImporter.new(path.to_s) },
         :sprockets => {
